@@ -1,0 +1,109 @@
+.orders-section h1 {
+  font-size: 32px;
+  color: #ffffff;
+  margin: 4px 0 6px;
+}
+
+.orders-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.order-row {
+  display: grid;
+  grid-template-columns: 1.8fr 1fr 1fr 1fr;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #06170f;
+  transition: all 0.2s ease;
+}
+
+.order-row:hover {
+  border-color: rgba(216, 181, 106, 0.4);
+  background: #081d13;
+}
+
+.order-id-date {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.order-id-date b {
+  font-size: 14px;
+  color: #ffffff;
+}
+
+.order-id-date small {
+  color: #798b80;
+  font-size: 11px;
+}
+
+.order-summary-text {
+  margin: 4px 0 0;
+  color: #aebcb3;
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.order-total-price {
+  font-size: 16px;
+  color: var(--gold2);
+}
+
+.order-status-badge {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 20px;
+  display: inline-block;
+  width: max-content;
+}
+
+.order-status-badge.delivered {
+  color: #4ade80;
+  background: rgba(34, 197, 94, 0.15);
+}
+
+.order-status-badge.shipped {
+  color: #60a5fa;
+  background: rgba(59, 130, 246, 0.15);
+}
+
+.order-status-badge.confirmed {
+  color: #facc15;
+  background: rgba(234, 179, 8, 0.15);
+}
+
+.order-view-link {
+  color: var(--gold2);
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  justify-content: flex-end;
+  transition: opacity 0.2s;
+}
+
+.order-view-link:hover {
+  opacity: 0.8;
+}
+
+@media (max-width: 768px) {
+  .order-row {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .order-view-link {
+    grid-column: 2;
+  }
+}

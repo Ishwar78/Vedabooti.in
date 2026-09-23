@@ -1,0 +1,116 @@
+.addresses-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  border-bottom: 1px solid rgba(216, 181, 106, 0.15);
+  padding-bottom: 16px;
+  margin-bottom: 24px;
+}
+
+.addresses-top h1 {
+  font-size: 32px;
+  color: #ffffff;
+  margin: 4px 0 0;
+}
+
+.add-address-form {
+  background: #06170f;
+  border: 1px solid rgba(216, 181, 106, 0.3);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 25px;
+}
+
+.add-address-form h3 {
+  font-size: 16px;
+  color: #ffffff;
+  margin: 0 0 16px;
+}
+
+.addr-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.addr-form-grid .wide {
+  grid-column: 1 / -1;
+}
+
+.address-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.address-card {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #06170f;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.2s ease;
+}
+
+.address-card:hover {
+  border-color: rgba(216, 181, 106, 0.4);
+}
+
+.address-badge-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.addr-tag {
+  color: var(--gold2);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  background: rgba(216, 181, 106, 0.15);
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.addr-delete-btn {
+  background: transparent;
+  border: 0;
+  color: #839188;
+  cursor: pointer;
+  font-size: 14px;
+  transition: color 0.2s;
+}
+
+.addr-delete-btn:hover {
+  color: #f87171;
+}
+
+.address-card h3 {
+  font-size: 16px;
+  color: #ffffff;
+  margin: 0 0 8px;
+}
+
+.address-card p {
+  color: #8d9b92;
+  font-size: 12px;
+  line-height: 1.6;
+  margin: 0;
+}
+
+@media (max-width: 650px) {
+  .addresses-top {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+  }
+  .address-grid {
+    grid-template-columns: 1fr;
+  }
+  .addr-form-grid {
+    grid-template-columns: 1fr;
+  }
+}

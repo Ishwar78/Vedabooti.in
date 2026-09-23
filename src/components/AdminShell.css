@@ -1,0 +1,269 @@
+.admin-shell {
+    min-height: 100vh;
+    background: #061812;
+    display: grid;
+    grid-template-columns: 220px 1fr;
+}
+
+
+/* ================================
+   SIDEBAR
+================================ */
+
+.admin-side {
+    background: #04130c;
+    border-right: 1px solid var(--line);
+    display: flex;
+    flex-direction: column;
+    padding: 12px;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    scrollbar-width: thin;
+}
+
+
+/* Sidebar Scrollbar */
+
+.admin-side::-webkit-scrollbar {
+    width: 5px;
+}
+
+.admin-side::-webkit-scrollbar-track {
+    background: #04130c;
+}
+
+.admin-side::-webkit-scrollbar-thumb {
+    background: #1b3b2a;
+    border-radius: 10px;
+}
+
+
+/* ================================
+   BRAND
+================================ */
+
+.admin-brand {
+    min-height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.admin-brand img {
+    width: 170px;
+    height: 75px;
+    object-fit: contain;
+}
+
+.admin-brand button {
+    display: none;
+}
+
+
+/* ================================
+   LINKS
+================================ */
+
+.admin-links {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding-top: 8px;
+}
+
+.admin-links a,
+.logout {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 11px;
+    border-radius: 8px;
+    color: #aeb9b2;
+    font-size: 16px;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.admin-links a svg,
+.logout svg {
+    min-width: 19px;
+    width: 19px;
+    height: 19px;
+    stroke-width: 1.8;
+}
+
+
+/* Hover */
+
+.admin-links a:hover {
+    background: #0b2418;
+    color: var(--gold2);
+    transform: translateX(2px);
+}
+
+
+/* Active */
+
+.admin-links a.active {
+    background: #102b1e;
+    color: var(--gold2);
+    box-shadow: inset 3px 0 0 var(--gold2);
+}
+
+
+/* Active icon */
+
+.admin-links a.active svg {
+    color: var(--gold2);
+}
+
+
+/* ================================
+   LOGOUT
+================================ */
+
+.logout {
+    margin-top: auto;
+    flex-shrink: 0;
+    color: #aeb9b2;
+}
+
+.logout:hover {
+    background: #291313;
+    color: #ff8d8d;
+}
+
+.logout svg {
+    transition: transform 0.2s ease;
+}
+
+.logout:hover svg {
+    transform: translateX(2px);
+}
+
+
+/* ================================
+   MAIN CONTENT
+================================ */
+
+.admin-content {
+    padding: 24px 3%;
+    min-width: 0;
+}
+
+
+/* ================================
+   MOBILE MENU BUTTON
+================================ */
+
+.admin-menu {
+    display: none;
+    border: 1px solid var(--line);
+    background: #0b2117;
+    color: #fff;
+    border-radius: 7px;
+    width: 38px;
+    height: 38px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+.admin-menu:hover {
+    background: #102b1e;
+    color: var(--gold2);
+    border-color: var(--gold2);
+}
+
+
+/* ================================
+   MOBILE OVERLAY
+================================ */
+
+@media (max-width: 800px) {
+
+    .admin-shell {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-side {
+        position: fixed;
+        left: -250px;
+        top: 0;
+        width: 235px;
+        height: 100vh;
+        z-index: 1000;
+        transition: left 0.25s ease;
+        box-shadow: 8px 0 25px rgba(0, 0, 0, 0.35);
+    }
+
+    .admin-side.open {
+        left: 0;
+    }
+
+    .admin-brand {
+        justify-content: space-between;
+    }
+
+    .admin-brand button {
+        display: grid;
+        place-items: center;
+        border: 1px solid var(--line);
+        background: transparent;
+        color: #fff;
+        width: 35px;
+        height: 35px;
+        border-radius: 7px;
+        cursor: pointer;
+        transition: 0.2s ease;
+    }
+
+    .admin-brand button:hover {
+        color: var(--gold2);
+        border-color: var(--gold2);
+        background: #102b1e;
+    }
+
+    .admin-menu {
+        display: grid;
+        place-items: center;
+    }
+
+    .admin-content {
+        padding: 18px 4%;
+    }
+}
+
+
+/* ================================
+   SMALL MOBILE
+================================ */
+
+@media (max-width: 480px) {
+
+    .admin-side {
+        width: 250px;
+        left: -265px;
+    }
+
+    .admin-side.open {
+        left: 0;
+    }
+
+    .admin-links a,
+    .logout {
+        padding: 12px;
+        font-size: 15px;
+    }
+
+    .admin-brand img {
+        width: 160px;
+    }
+
+    .admin-content {
+        padding: 15px;
+    }
+}

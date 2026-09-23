@@ -1,0 +1,179 @@
+.admin-page {
+    color: #eef5f0
+}
+
+.admin-page-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    align-items: center;
+    margin-bottom: 26px
+}
+
+.admin-kicker {
+    color: var(--gold2, #d5b46a);
+    font-size: 12px;
+    letter-spacing: 2px
+}
+
+.admin-page h1 {
+    margin: 7px 0;
+    font-size: 30px
+}
+
+.admin-page p {
+    color: #91a49a;
+    margin: 0
+}
+
+.admin-stat-card {
+    min-width: 150px;
+    background: #0a2418;
+    border: 1px solid #19392a;
+    border-radius: 14px;
+    padding: 16px;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 4px 10px
+}
+
+.admin-stat-card svg {
+    grid-row: span 2;
+    color: var(--gold2, #d5b46a);
+    font-size: 22px
+}
+
+.admin-stat-card strong {
+    font-size: 22px
+}
+
+.admin-stat-card span {
+    font-size: 12px;
+    color: #8fa197
+}
+
+.admin-toolbar {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 16px
+}
+
+.admin-search {
+    width: min(420px, 100%);
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    background: #081e14;
+    border: 1px solid #19392a;
+    border-radius: 9px;
+    padding: 0 12px
+}
+
+.admin-search svg {
+    color: #83968b
+}
+
+.admin-search input {
+    width: 100%;
+    padding: 12px 0;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: #fff
+}
+
+.admin-table-wrap {
+    overflow: auto;
+    background: #071c12;
+    border: 1px solid #17372a;
+    border-radius: 14px
+}
+
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 850px
+}
+
+.admin-table th,
+.admin-table td {
+    padding: 14px 16px;
+    text-align: left;
+    border-bottom: 1px solid #143126
+}
+
+.admin-table th {
+    color: #8fa197;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: .7px
+}
+
+.admin-table td {
+    font-size: 14px;
+    color: #c6d2cb
+}
+
+.admin-table td small {
+    display: block;
+    color: #71847a;
+    margin-top: 4px
+}
+
+.status-badge {
+    padding: 5px 9px;
+    border-radius: 20px;
+    background: #1c3026;
+    color: #b9c9c0;
+    font-size: 12px
+}
+
+.status-badge.new {
+    color: #e3c675
+}
+
+.status-badge.replied {
+    color: #83d6a5
+}
+
+.action-buttons {
+    display: flex;
+    gap: 7px
+}
+
+.action-buttons button {
+    width: 34px;
+    height: 34px;
+    border: 1px solid #254738;
+    background: #0d281c;
+    color: #b7c7bf;
+    border-radius: 7px;
+    display: grid;
+    place-items: center;
+    cursor: pointer
+}
+
+.action-buttons button:hover {
+    color: var(--gold2, #d5b46a);
+    border-color: var(--gold2, #d5b46a)
+}
+
+.action-buttons .danger:hover {
+    color: #ff8d8d;
+    border-color: #713b3b
+}
+
+@media(max-width:700px) {
+    .admin-page-head {
+        align-items: flex-start;
+        flex-direction: column
+    }
+
+    .admin-stat-card {
+        width: 100%
+    }
+
+    .admin-page h1 {
+        font-size: 25px
+    }
+}
