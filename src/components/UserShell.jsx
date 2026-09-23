@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   FiGrid,
   FiUser,
@@ -12,6 +12,7 @@ import {
   FiX,
   FiShoppingBag
 } from "react-icons/fi";
+
 import SiteHeader from "./SiteHeader";
 import SiteFooter from "./SiteFooter";
 import "./UserShell.css";
@@ -27,48 +28,88 @@ const USER_NAV_ITEMS = [
 
 export default function UserShell({ children }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+
   const location = useLocation();
+  const navigate = useNavigate();
 
   const isCurrentActive = (path) => {
-    if (path === "/orders" && location.pathname.startsWith("/order-details")) {
+    if (
+      path === "/orders" &&
+      location.pathname.startsWith("/order-details")
+    ) {
       return true;
     }
+
     return location.pathname === path;
+  };
+
+  // ================= LOGOUT =================
+  const handleLogout = () => {
+    // Remove common login/session data
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    localStorage.removeItem("userToken");
+    localStorage.removeItem("authToken");
+    localStorage.removeItem("isLoggedIn");
+
+    // Close mobile sidebar
+    setMobileOpen(false);
+
+    // Redirect to login
+    navigate("/login");
   };
 
   return (
     <div className="user-shell-wrapper">
+
       <SiteHeader />
 
       <div className="user-shell-body container">
-        {/* Persistent User Sidebar */}
-        <aside className={`user-sidebar ${mobileOpen ? "open" : ""}`}>
+
+        {/* ================= USER SIDEBAR ================= */}
+        <aside
+          className={`user-sidebar ${
+            mobileOpen ? "open" : ""
+          }`}
+        >
+
+          {/* Sidebar Header */}
           <div className="user-sidebar-head">
+
             <div className="user-avatar-badge">
               <FiUser />
             </div>
+
             <div className="user-sidebar-profile">
               <b>Wellness Lover</b>
               <small>customer@example.com</small>
             </div>
+
             <button
               type="button"
               className="user-sidebar-close"
               onClick={() => setMobileOpen(false)}
+              aria-label="Close account menu"
             >
               <FiX />
             </button>
+
           </div>
 
+          {/* Navigation */}
           <nav className="user-sidebar-nav">
+
             {USER_NAV_ITEMS.map((item) => {
               const Icon = item.icon;
               const active = isCurrentActive(item.to);
+
               return (
                 <Link
                   key={item.to}
                   to={item.to}
-                  className={`user-nav-link ${active ? "active" : ""}`}
+                  className={`user-nav-link ${
+                    active ? "active" : ""
+                  }`}
                   onClick={() => setMobileOpen(false)}
                 >
                   <Icon className="nav-icon" />
@@ -76,21 +117,37 @@ export default function UserShell({ children }) {
                 </Link>
               );
             })}
+
           </nav>
 
+          {/* Sidebar Footer */}
           <div className="user-sidebar-foot">
-            <Link to="/shop" className="user-foot-link">
+
+            {/* Browse Products */}
+            <Link
+              to="/shop"
+              className="user-foot-link"
+              onClick={() => setMobileOpen(false)}
+            >
               <FiShoppingBag />
               <span>Browse Products</span>
             </Link>
-            <Link to="/" className="user-foot-link logout">
+
+            {/* Logout */}
+            <button
+              type="button"
+              className="user-foot-link logout"
+              onClick={handleLogout}
+            >
               <FiLogOut />
-              <span>Back to Store</span>
-            </Link>
+              <span>Logout</span>
+            </button>
+
           </div>
+
         </aside>
 
-        {/* Backdrop for mobile */}
+        {/* ================= MOBILE BACKDROP ================= */}
         {mobileOpen && (
           <div
             className="user-sidebar-backdrop"
@@ -98,9 +155,12 @@ export default function UserShell({ children }) {
           />
         )}
 
-        {/* Content Area */}
+        {/* ================= MAIN CONTENT ================= */}
         <main className="user-main-content">
+
+          {/* Mobile Account Menu */}
           <div className="user-mobile-topbar">
+
             <button
               type="button"
               className="user-mobile-toggle"
@@ -109,12 +169,17 @@ export default function UserShell({ children }) {
               <FiMenu />
               <span>Account Menu</span>
             </button>
+
           </div>
+
           {children}
+
         </main>
+
       </div>
 
       <SiteFooter />
+
     </div>
   );
 }

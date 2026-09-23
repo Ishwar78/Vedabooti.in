@@ -78,6 +78,8 @@
   display: none;
 }
 
+/* ================= NAVIGATION ================= */
+
 .user-sidebar-nav {
   display: flex;
   flex-direction: column;
@@ -113,16 +115,26 @@
 }
 
 .user-nav-link.active {
-  background: linear-gradient(135deg, rgba(216, 181, 106, 0.25), rgba(34, 197, 94, 0.15));
+  background: linear-gradient(
+    135deg,
+    rgba(216, 181, 106, 0.25),
+    rgba(34, 197, 94, 0.15)
+  );
+
   border: 1px solid rgba(216, 181, 106, 0.4);
+
   color: var(--gold2);
+
   font-weight: 600;
+
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
 }
 
 .user-nav-link.active .nav-icon {
   color: var(--gold2);
 }
+
+/* ================= SIDEBAR FOOTER ================= */
 
 .user-sidebar-foot {
   display: flex;
@@ -132,16 +144,45 @@
   border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
+/* Common link + logout button */
+
 .user-foot-link {
+  width: 100%;
+  box-sizing: border-box;
+
   display: flex;
   align-items: center;
   gap: 10px;
+
   padding: 10px 14px;
+
   border-radius: 8px;
+
   color: #8c9c92;
+
   text-decoration: none;
+
   font-size: 12px;
-  transition: all 0.2s ease;
+
+  font-family: inherit;
+
+  background: transparent;
+  border: 1px solid transparent;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
+
+  text-align: left;
+}
+
+.user-foot-link svg {
+  font-size: 16px;
+  flex-shrink: 0;
 }
 
 .user-foot-link:hover {
@@ -149,9 +190,24 @@
   color: #ffffff;
 }
 
+/* ================= LOGOUT ================= */
+
+.user-foot-link.logout {
+  color: #a9aaa8;
+}
+
 .user-foot-link.logout:hover {
   color: #f87171;
+
   background: rgba(225, 29, 72, 0.1);
+
+  border-color: rgba(248, 113, 113, 0.15);
+
+  transform: translateX(2px);
+}
+
+.user-foot-link.logout:hover svg {
+  color: #f87171;
 }
 
 /* ================= MAIN CONTENT ================= */
@@ -169,7 +225,10 @@
   display: none;
 }
 
+/* ================= MOBILE ================= */
+
 @media (max-width: 880px) {
+
   .user-shell-body {
     grid-template-columns: 1fr;
     gap: 16px;
@@ -185,25 +244,38 @@
     display: inline-flex;
     align-items: center;
     gap: 8px;
+
     padding: 9px 16px;
+
     background: rgba(216, 181, 106, 0.15);
+
     border: 1px solid rgba(216, 181, 106, 0.35);
+
     color: var(--gold2);
+
     border-radius: 8px;
+
     font-size: 13px;
     font-weight: 600;
+
     cursor: pointer;
   }
 
   .user-sidebar {
     position: fixed;
+
     top: 0;
     left: -290px;
+
     width: 280px;
     height: 100vh;
+
     z-index: 1200;
+
     border-radius: 0;
+
     transition: left 0.3s ease;
+
     overflow-y: auto;
   }
 
@@ -214,19 +286,29 @@
   .user-sidebar-close {
     display: grid;
     place-items: center;
+
     margin-left: auto;
+
     background: transparent;
+
     border: 0;
+
     color: #fff;
+
     font-size: 20px;
+
     cursor: pointer;
   }
 
   .user-sidebar-backdrop {
     position: fixed;
+
     inset: 0;
+
     background: rgba(0, 0, 0, 0.7);
+
     backdrop-filter: blur(4px);
+
     z-index: 1100;
   }
 }
