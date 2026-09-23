@@ -9,6 +9,7 @@ import adminRoute from "./route/adminRoute.js";
 import categoryRoute from "./route/categoryRoute.js";
 import contactRoute from "./route/contactRoute.js";
 import videoRoute from "./route/videoRoute.js";
+import productRoute from "./route/productRoute.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -39,6 +40,9 @@ app.use("/contact", contactRoute);
 
 app.use("/api/videos", videoRoute);
 app.use("/videos", videoRoute);
+
+app.use("/api/products", productRoute);
+app.use("/products", productRoute);
 
 // Root health check
 app.get("/", (req, res) => {

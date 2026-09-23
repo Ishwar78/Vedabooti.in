@@ -116,60 +116,55 @@
 
 .thumbs {
     display: flex;
-
     flex-direction: column;
-
     gap: 9px;
+    max-height: 520px;
+    overflow-y: auto;
+    padding-right: 4px;
 }
 
+.thumbs::-webkit-scrollbar {
+    width: 4px;
+}
+
+.thumbs::-webkit-scrollbar-thumb {
+    background: #1a422e;
+    border-radius: 4px;
+}
 
 .thumbs button {
     width: 70px;
     height: 70px;
-
     border: 1px solid var(--line);
-
-    background:
-        linear-gradient(
-            145deg,
-            #0c2418,
-            #07150f
-        );
-
-    color: #b9c3bd;
-
+    background: linear-gradient(145deg, #0c2418, #07150f);
     border-radius: 9px;
-
     cursor: pointer;
-
-    display: grid;
-
-    place-items: center;
-
-    font-family:
-        "Montserrat",
-        sans-serif;
-
-    font-size: 10px;
-
-    transition:
-        border-color .2s ease,
-        transform .2s ease;
+    overflow: hidden;
+    padding: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all .2s ease;
+    flex-shrink: 0;
 }
 
+.thumbs button img.thumb-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 6px;
+    display: block;
+}
 
 .thumbs button:hover {
     border-color: var(--gold);
-
     transform: translateX(2px);
 }
 
-
 .thumbs button.active {
     border-color: var(--gold2);
-
-    box-shadow:
-        0 0 0 1px rgba(220, 184, 104, .2);
+    box-shadow: 0 0 0 2px rgba(220, 184, 104, .45);
+    transform: scale(1.04);
 }
 
 

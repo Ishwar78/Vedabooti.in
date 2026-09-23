@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate, useParams, useLocation } from "react-router-dom";
 import {
     FiMinus,
@@ -18,6 +18,7 @@ import SiteHeader from "../../components/SiteHeader";
 import SiteFooter from "../../components/SiteFooter";
 import ProductCard from "../../components/ProductCard";
 import { allProducts, getProductBySlug } from "../../data/products";
+import api, { getProductImageUrl } from "../../lib/api";
 import {
     addToCart as addToCartHelper,
     toggleWishlist,
@@ -38,14 +39,51 @@ export default function ProductDetail() {
     const fallbackProduct = getProductBySlug(slug);
     const passedProduct = location.state?.product;
 
-    // Use passed product if available and matches slug/id, else fallback to database
-    const rawProduct = (passedProduct && (passedProduct.slug === slug || String(passedProduct.id) === String(slug)))
-        ? { ...fallbackProduct, ...passedProduct }
-        : fallbackProduct;
+    const [dbProduct, setDbProduct] = useState(null);
+    const [activeImageIndex, setActiveImageIndex] = useState(0);
+
+    // Fetch product details from MongoDB
+    useEffect(() => {
+        let isMounted = true;
+        const fetchProduct = async () => {
+            try {
+                const res = await api.get(`/api/products/${slug}`);
+                if (isMounted && res && res.product) {
+                    setDbProduct(res.product);
+                }
+            } catch (err) {
+                console.warn("Product fetch from API fallback:", err);
+            }
+        };
+        fetchProduct();
+        return () => {
+            isMounted = false;
+        };
+    }, [slug]);
+
+    // Use dbProduct if fetched, else passedProduct, else fallback
+    const rawProduct = dbProduct || passedProduct || fallbackProduct;
+
+    // Extract ALL images uploaded for this product
+    const allImages = useMemo(() => {
+        if (rawProduct.images && Array.isArray(rawProduct.images) && rawProduct.images.length > 0) {
+            return rawProduct.images;
+        }
+        if (rawProduct.image) {
+            return [rawProduct.image];
+        }
+        return ["/assets/product1.jpeg"];
+    }, [rawProduct]);
+
+    // Reset active image on product change
+    useEffect(() => {
+        setActiveImageIndex(0);
+    }, [slug, dbProduct]);
 
     // Guarantee default properties so no map/destructure crashes
     const product = {
         ...rawProduct,
+        id: rawProduct._id || rawProduct.id,
         points: rawProduct.points && rawProduct.points.length ? rawProduct.points : [
             "Pure herbal formulation",
             "100% natural ingredients",
@@ -53,7 +91,7 @@ export default function ProductDetail() {
             "Made in India"
         ],
         reviews: rawProduct.reviews || "850+",
-        desc: rawProduct.desc || "Authentic Ayurvedic preparation crafted with natural ingredients for wellness and vitality."
+        desc: rawProduct.desc || rawProduct.shortDescription || "Authentic Ayurvedic preparation crafted with natural ingredients for wellness and vitality."
     };
 
     const relatedProducts = allProducts.filter(p => p.slug !== slug).slice(0, 4);
@@ -201,7 +239,7 @@ export default function ProductDetail() {
                     <span>/</span>
 
                     <span>
-                        Herbal Supplements
+                        {product.category || "Herbal Care"}
                     </span>
 
                     <span>/</span>
@@ -223,23 +261,21 @@ export default function ProductDetail() {
                     <div className="gallery">
 
                         <div className="thumbs">
-
-                            <button className="active">
-                                <span>01</span>
-                            </button>
-
-                            <button>
-                                <span>02</span>
-                            </button>
-
-                            <button>
-                                <span>03</span>
-                            </button>
-
-                            <button>
-                                <span>04</span>
-                            </button>
-
+                            {allImages.map((imgSrc, idx) => (
+                                <button
+                                    key={idx}
+                                    type="button"
+                                    className={`thumb-btn ${idx === activeImageIndex ? "active" : ""}`}
+                                    onClick={() => setActiveImageIndex(idx)}
+                                    title={`View image ${idx + 1}`}
+                                >
+                                    <img
+                                        src={getProductImageUrl(imgSrc)}
+                                        alt={`${product.name} thumb ${idx + 1}`}
+                                        className="thumb-img"
+                                    />
+                                </button>
+                            ))}
                         </div>
 
 
@@ -263,9 +299,9 @@ export default function ProductDetail() {
 
                             <div className="product-glow"></div>
 
-                            {product.image ? (
+                            {(allImages[activeImageIndex] || product.image) ? (
                                 <img
-                                    src={product.image}
+                                    src={getProductImageUrl(allImages[activeImageIndex] || product.image)}
                                     alt={product.name}
                                     className="detail-real-img"
                                 />
@@ -356,20 +392,35 @@ export default function ProductDetail() {
                                 ₹{product.price}
                             </strong>
 
-                            <del>
-                                ₹{product.old}
-                            </del>
+                            {(product.oldPrice || product.old) && Number(product.oldPrice || product.old) > Number(product.price) && (
+                                <del>
+                                    ₹{product.oldPrice || product.old}
+                                </del>
+                            )}
 
-                            <b>
-                                {discount}% OFF
-                            </b>
+                            {product.discount ? (
+                                <b>
+                                    {String(product.discount).includes("OFF") ? product.discount : `${product.discount}% OFF`}
+                                </b>
+                            ) : discount > 0 ? (
+                                <b>
+                                    {discount}% OFF
+                                </b>
+                            ) : null}
 
                         </div>
 
 
-                        <p className="detail-description">
-                            {product.desc}
-                        </p>
+                        {/<[a-z][\s\S]*>/i.test(product.shortDescription || product.desc) ? (
+                            <div
+                                className="detail-description rich-text-content"
+                                dangerouslySetInnerHTML={{ __html: product.shortDescription || product.desc }}
+                            />
+                        ) : (
+                            <p className="detail-description">
+                                {product.shortDescription || product.desc}
+                            </p>
+                        )}
 
 
                         <div className="benefit-mini">
@@ -729,18 +780,28 @@ export default function ProductDetail() {
                                 </div>
                             ) : (
                                 <>
-                                    <p>
-                                        {tab === "Description"
-                                            ? product.desc
-                                            : tab === "Benefits"
+                                    {tab === "Description" ? (
+                                        /<[a-z][\s\S]*>/i.test(product.desc) ? (
+                                            <div
+                                                className="rich-description-body"
+                                                dangerouslySetInnerHTML={{ __html: product.desc }}
+                                                style={{ lineHeight: 1.7, color: "#9ca9a1" }}
+                                            />
+                                        ) : (
+                                            <p>{product.desc}</p>
+                                        )
+                                    ) : (
+                                        <p>
+                                            {tab === "Benefits"
                                                 ? "Traditionally used as part of balanced wellness routines. Follow the product label and your healthcare professional's advice where appropriate."
                                                 : tab === "Ingredients"
                                                     ? "Single-herb formulation with carefully processed botanical ingredients."
                                                     : tab === "How to Use"
-                                                        ? "Refer to the product label for recommended usage, storage and preparation instructions."
+                                                        ? (product.howToUse || "Refer to the product label for recommended usage, storage and preparation instructions.")
                                                         : "For product-related questions, please contact our support team for assistance."
-                                        }
-                                    </p>
+                                            }
+                                        </p>
+                                    )}
 
                                     <ul>
                                         {product.points.map(point => (

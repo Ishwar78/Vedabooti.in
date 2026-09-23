@@ -17,7 +17,7 @@ import {
 import ProductCard from "../../components/ProductCard";
 import SiteHeader from "../../components/SiteHeader";
 import SiteFooter from "../../components/SiteFooter";
-import { homeProducts as products } from "../../data/products";
+import { homeProducts as defaultHomeProducts } from "../../data/products";
 import api, { getCategoryImageUrl, getVideoUrl } from "../../lib/api";
 
 import "./Home.css";
@@ -85,6 +85,9 @@ export default function Home() {
     // Dynamic Categories from MongoDB
     const [categories, setCategories] = useState([]);
 
+    // Dynamic Best Selling Products from MongoDB
+    const [products, setProducts] = useState(defaultHomeProducts);
+
     // Dynamic Customer Video Reels from MongoDB
     const [videoReels, setVideoReels] = useState(defaultVideoReels);
 
@@ -105,6 +108,17 @@ export default function Home() {
             }
         };
 
+        const loadProducts = async () => {
+            try {
+                const res = await api.get("/api/products?status=Active");
+                if (isMounted && res && res.products && res.products.length > 0) {
+                    setProducts(res.products.slice(0, 5));
+                }
+            } catch (err) {
+                console.error("Failed to load products on Home:", err);
+            }
+        };
+
         const loadVideos = async () => {
             try {
                 const res = await api.get("/api/videos?status=Active");
@@ -117,6 +131,7 @@ export default function Home() {
         };
 
         loadCategories();
+        loadProducts();
         loadVideos();
 
         return () => {
@@ -494,7 +509,7 @@ export default function Home() {
                         {products.map(product => (
 
                             <ProductCard
-                                key={product.id}
+                                key={product._id || product.id}
                                 product={product}
                             />
 

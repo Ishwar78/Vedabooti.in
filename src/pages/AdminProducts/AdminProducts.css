@@ -157,8 +157,8 @@
 }
 
 .row-actions button {
-    width: 33px;
-    height: 33px;
+    width: 53px;
+    height: 43px;
     border: 1px solid #29483a;
     background: #07170f;
     color: #b7c7bf;
@@ -525,6 +525,162 @@
 .price-preview-box strong {
     color: var(--gold2, #d8b56a);
     font-size: 18px;
+}
+
+/* =========================================================
+   PRICING CALCULATION CARD
+========================================================= */
+
+.pricing-calculation-card {
+    background: #061910;
+    border: 1px solid #1f4733;
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin-top: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.calc-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 13px;
+    color: #8fa599;
+}
+
+.calc-row strong {
+    color: #edf4ef;
+    font-size: 14px;
+}
+
+.calc-row.discount-row strong.text-green {
+    color: #22c55e;
+    font-weight: 600;
+}
+
+.calc-divider {
+    height: 1px;
+    background: #173827;
+    margin: 2px 0;
+}
+
+.calc-row.final-row {
+    font-size: 14px;
+    font-weight: 600;
+    color: #d1ded7;
+}
+
+.calc-row.final-row strong.text-gold {
+    color: var(--gold2, #d8b56a);
+    font-size: 20px;
+    font-weight: 700;
+}
+
+/* =========================================================
+   QUILL RICH TEXT EDITOR DARK THEME
+========================================================= */
+
+.quill-editor-wrapper {
+    margin-top: 6px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid #284c3c;
+    background: #061910;
+}
+
+.quill-editor-wrapper:focus-within {
+    border-color: var(--gold2, #d8b56a);
+    box-shadow: 0 0 0 2px rgba(216, 181, 106, 0.2);
+}
+
+.quill-editor-wrapper .ql-toolbar.ql-snow {
+    background: #092015;
+    border: 0;
+    border-bottom: 1px solid #1c3c2d;
+    padding: 8px;
+}
+
+.quill-editor-wrapper .ql-snow .ql-stroke {
+    stroke: #9cb1a5;
+}
+
+.quill-editor-wrapper .ql-snow .ql-fill {
+    fill: #9cb1a5;
+}
+
+.quill-editor-wrapper .ql-snow .ql-picker {
+    color: #9cb1a5;
+}
+
+.quill-editor-wrapper .ql-snow .ql-picker-options {
+    background: #0a2418;
+    border: 1px solid #27483a;
+    color: #e4ebe6;
+    padding: 6px;
+}
+
+.quill-editor-wrapper .ql-snow .ql-picker-item:hover,
+.quill-editor-wrapper .ql-snow .ql-picker-label:hover {
+    color: var(--gold2, #d8b56a);
+}
+
+.quill-editor-wrapper .ql-snow .ql-picker-label:hover .ql-stroke {
+    stroke: var(--gold2, #d8b56a);
+}
+
+.quill-editor-wrapper .ql-snow button:hover .ql-stroke,
+.quill-editor-wrapper .ql-snow button.ql-active .ql-stroke {
+    stroke: var(--gold2, #d8b56a);
+}
+
+.quill-editor-wrapper .ql-snow button:hover .ql-fill,
+.quill-editor-wrapper .ql-snow button.ql-active .ql-fill {
+    fill: var(--gold2, #d8b56a);
+}
+
+.quill-editor-wrapper .ql-container.ql-snow {
+    border: 0;
+    font-family: inherit;
+    font-size: 14px;
+    color: #e6ede8;
+}
+
+.quill-editor-wrapper .ql-editor {
+    min-height: 110px;
+    max-height: 250px;
+    overflow-y: auto;
+    padding: 12px 14px;
+    line-height: 1.6;
+}
+
+.quill-editor-wrapper.quill-full .ql-editor {
+    min-height: 180px;
+    max-height: 350px;
+}
+
+.quill-editor-wrapper .ql-editor.ql-blank::before {
+    color: #556c60;
+    font-style: normal;
+}
+
+.quill-editor-wrapper .ql-editor ul,
+.quill-editor-wrapper .ql-editor ol {
+    padding-left: 20px;
+}
+
+.quill-editor-wrapper .ql-editor p {
+    margin-bottom: 8px;
+}
+
+.quill-editor-wrapper .ql-editor strong {
+    color: #fff;
+    font-weight: 600;
+}
+
+.quill-editor-wrapper .ql-editor a {
+    color: var(--gold2, #d8b56a);
 }
 
 

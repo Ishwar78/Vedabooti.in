@@ -23,6 +23,15 @@ export const getVideoUrl = (src) => {
   return src;
 };
 
+export const getProductImageUrl = (src) => {
+  if (!src) return "/assets/product1.jpeg";
+  if (src.startsWith("http://") || src.startsWith("https://")) return src;
+  if (src.startsWith("/uploads/")) {
+    return `${API_BASE_URL}${src}`;
+  }
+  return src;
+};
+
 async function request(path, options = {}) {
   const cleanPath = path.startsWith("/") ? path : `/${path}`;
   const url = `${API_BASE_URL}${cleanPath}`;
@@ -52,7 +61,9 @@ async function request(path, options = {}) {
   if (!response.ok) {
     let errorMessage = "Request failed";
     if (data && typeof data === "object") {
-      errorMessage = data.message || data.error || JSON.stringify(data);
+      errorMessage = data.error
+        ? `${data.message ? data.message + ": " : ""}${data.error}`
+        : data.message || JSON.stringify(data);
     } else if (typeof data === "string" && data.trim()) {
       errorMessage = data;
     }

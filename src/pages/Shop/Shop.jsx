@@ -19,6 +19,7 @@ export default function Shop() {
     const initialCategory = searchParams.get("category") || "All Products";
 
     const [dbCategories, setDbCategories] = useState([]);
+    const [dbProducts, setDbProducts] = useState(allProducts);
     const [cat, setCat] = useState(initialCategory);
     const [sort, setSort] = useState("Featured");
     const [term, setTerm] = useState("");
@@ -32,21 +33,29 @@ export default function Shop() {
 
     useEffect(() => {
         let isMounted = true;
-        const loadCategories = async () => {
+        const loadShopData = async () => {
             try {
-                const res = await api.get("/api/categories?status=Active");
+                const [catRes, prodRes] = await Promise.all([
+                    api.get("/api/categories?status=Active"),
+                    api.get("/api/products?status=Active")
+                ]);
+
                 if (isMounted) {
-                    if (res && res.categories) {
-                        setDbCategories(res.categories);
-                    } else if (Array.isArray(res)) {
-                        setDbCategories(res);
+                    if (catRes && catRes.categories) {
+                        setDbCategories(catRes.categories);
+                    } else if (Array.isArray(catRes)) {
+                        setDbCategories(catRes);
+                    }
+
+                    if (prodRes && prodRes.products && prodRes.products.length > 0) {
+                        setDbProducts(prodRes.products);
                     }
                 }
             } catch (err) {
-                console.error("Failed to load categories in Shop:", err);
+                console.error("Failed to load shop data:", err);
             }
         };
-        loadCategories();
+        loadShopData();
         return () => {
             isMounted = false;
         };
@@ -56,55 +65,56 @@ export default function Shop() {
         return ["All Products", ...dbCategories.map((c) => c.name)];
     }, [dbCategories]);
 
+    const activeProductList = dbProducts.length > 0 ? dbProducts : allProducts;
+
     const categoryCounts = useMemo(() => {
         const counts = {};
         dbCategories.forEach((category) => {
             const cleanName = category.name.toLowerCase().split(" ")[0];
-            const count = allProducts.filter(
+            const count = activeProductList.filter(
                 (p) =>
-                    p.subtitle.toLowerCase().includes(cleanName) ||
+                    (p.category && p.category.toLowerCase().includes(cleanName)) ||
+                    (p.subtitle && p.subtitle.toLowerCase().includes(cleanName)) ||
                     p.name.toLowerCase().includes(cleanName)
             ).length;
             counts[category.name] = count;
         });
         return counts;
-    }, [dbCategories]);
+    }, [dbCategories, activeProductList]);
 
     const filtered = useMemo(() => {
-        let products = allProducts.filter(product => {
+        let products = activeProductList.filter(product => {
             const selectedCatClean = cat.toLowerCase();
             const categoryMatch =
                 cat === "All Products" ||
-                product.subtitle.toLowerCase().includes(selectedCatClean) ||
+                (product.category && product.category.toLowerCase().includes(selectedCatClean)) ||
+                (product.subtitle && product.subtitle.toLowerCase().includes(selectedCatClean)) ||
                 product.name.toLowerCase().includes(selectedCatClean) ||
-                selectedCatClean.includes(product.subtitle.toLowerCase().split(" ")[0]);
+                selectedCatClean.includes((product.subtitle || "").toLowerCase().split(" ")[0]);
 
             const searchMatch =
                 product.name
                     .toLowerCase()
-                    .includes(term.toLowerCase());
+                    .includes(term.toLowerCase()) ||
+                (product.subtitle && product.subtitle.toLowerCase().includes(term.toLowerCase()));
 
             return categoryMatch && searchMatch;
         });
 
-
         if (sort === "Price: Low") {
-            products.sort(
-                (a, b) => a.price - b.price
+            products = [...products].sort(
+                (a, b) => Number(a.price) - Number(b.price)
             );
         }
-
 
         if (sort === "Price: High") {
-            products.sort(
-                (a, b) => b.price - a.price
+            products = [...products].sort(
+                (a, b) => Number(b.price) - Number(a.price)
             );
         }
 
-
         return products;
-
-    }, [cat, sort, term]);
+    }, [activeProductList, cat, sort, term]);
 
 
     return (

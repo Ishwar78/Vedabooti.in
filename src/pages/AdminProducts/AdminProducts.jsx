@@ -1,5 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import AdminShell from "../../components/AdminShell";
+import api, { getProductImageUrl } from "../../lib/api";
 import {
     FiPlus,
     FiX,
@@ -10,95 +12,141 @@ import {
     FiEdit2,
     FiEye,
     FiCheck,
+    FiRefreshCw
 } from "react-icons/fi";
+import ReactQuill from "react-quill";
+import "react-quill/dist/quill.snow.css";
 import "./AdminProducts.css";
+
+export const calculatePricing = (basePriceVal, discountVal, discountType) => {
+    const base = Number(basePriceVal) || 0;
+    const discount = Number(discountVal) || 0;
+    if (base <= 0) return { base: 0, offAmount: 0, sellingPrice: 0, discountTag: "" };
+
+    let offAmount = 0;
+    let discountTag = "";
+
+    if (discountType === "Fixed Amount") {
+        offAmount = Math.min(discount, base);
+        discountTag = discount > 0 ? `₹${discount} OFF` : "";
+    } else {
+        // Percentage
+        const pct = Math.min(Math.max(discount, 0), 100);
+        offAmount = Math.round((base * pct) / 100);
+        discountTag = discount > 0 ? `${discount}% OFF` : "";
+    }
+
+    const sellingPrice = Math.max(0, base - offAmount);
+    return {
+        base,
+        offAmount,
+        sellingPrice,
+        discountTag,
+    };
+};
+
+const shortQuillModules = {
+    toolbar: [
+        ["bold", "italic", "underline"],
+        [{ list: "ordered" }, { list: "bullet" }],
+        ["clean"],
+    ],
+};
+
+const fullQuillModules = {
+    toolbar: [
+        [{ header: [1, 2, 3, false] }],
+        ["bold", "italic", "underline", "strike"],
+        [{ color: [] }, { background: [] }],
+        [{ list: "ordered" }, { list: "bullet" }],
+        ["blockquote", "link"],
+        ["clean"],
+    ],
+};
 
 export default function AdminProducts() {
     const [show, setShow] = useState(false);
     const [search, setSearch] = useState("");
     const [step, setStep] = useState(1);
+    const [statusFilter, setStatusFilter] = useState("All Status");
 
-    const [products, setProducts] = useState([
-        {
-            name: "Ashwagandha Powder",
-            category: "Immunity",
-            price: "₹299",
-            status: "Active",
-        },
-        {
-            name: "Amla Powder",
-            category: "Nutrition",
-            price: "₹249",
-            status: "Active",
-        },
-        {
-            name: "Tulsi Leaves",
-            category: "Immunity",
-            price: "₹199",
-            status: "Active",
-        },
-        {
-            name: "Neem Powder",
-            category: "Skin Care",
-            price: "₹249",
-            status: "Active",
-        },
-        {
-            name: "Triphala Churna",
-            category: "Digestive",
-            price: "₹299",
-            status: "Active",
-        },
-        {
-            name: "Brahmi Powder",
-            category: "Mind & Focus",
-            price: "₹249",
-            status: "Draft",
-        },
+    const [products, setProducts] = useState([]);
+    const [categories, setCategories] = useState([
+        "Skin Care",
+        "Hair Care",
+        "Health & Wellness",
+        "Immunity",
+        "Herbal Teas",
+        "Nutrition",
+        "Digestive",
+        "Mind & Focus",
+        "Ayurvedic",
     ]);
+    const [loading, setLoading] = useState(true);
+    const [editingProduct, setEditingProduct] = useState(null);
+    const [submitting, setSubmitting] = useState(false);
 
     const [form, setForm] = useState({
         productName: "",
         category: "",
         active: true,
-
         price: "",
         discount: "",
         discountType: "Percentage",
         unit: "Gram",
-
         shortDescription: "",
         description: "",
-
+        subtitle: "",
+        tag: "Bestseller",
+        stock: 100,
         benefits: [""],
         ingredients: [""],
         howToUse: "",
-
         faq: [
             {
                 question: "",
                 answer: "",
             },
         ],
-
         metaTitle: "",
         metaDescription: "",
         metaTags: "",
     });
 
     const [images, setImages] = useState([]);
+    const pricing = calculatePricing(form.price, form.discount, form.discountType);
 
-    const categories = [
-        "Skin Care",
-        "Hair Care",
-        "Health & Wellness",
-        "Immunity Boost",
-        "Herbal Teas",
-        "Nutrition",
-        "Digestive",
-        "Mind & Focus",
-        "Ayurvedic",
-    ];
+    // Fetch products from MongoDB
+    const fetchProducts = async () => {
+        setLoading(true);
+        try {
+            const res = await api.get("/api/products");
+            if (res && res.products) {
+                setProducts(res.products);
+            }
+        } catch (err) {
+            console.error("Failed to load products:", err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Fetch categories dynamically
+    const fetchCategories = async () => {
+        try {
+            const res = await api.get("/api/categories?status=Active");
+            if (res && res.categories && res.categories.length > 0) {
+                setCategories(res.categories.map((c) => c.name));
+            }
+        } catch (err) {
+            console.error("Failed to load categories:", err);
+        }
+    };
+
+    useEffect(() => {
+        fetchProducts();
+        fetchCategories();
+    }, []);
 
     /* =========================
        FORM HANDLERS
@@ -118,7 +166,6 @@ export default function AdminProducts() {
     const updateBenefit = (index, value) => {
         const updated = [...form.benefits];
         updated[index] = value;
-
         setForm({
             ...form,
             benefits: updated,
@@ -134,7 +181,6 @@ export default function AdminProducts() {
 
     const removeBenefit = (index) => {
         if (form.benefits.length === 1) return;
-
         setForm({
             ...form,
             benefits: form.benefits.filter((_, i) => i !== index),
@@ -148,7 +194,6 @@ export default function AdminProducts() {
     const updateIngredient = (index, value) => {
         const updated = [...form.ingredients];
         updated[index] = value;
-
         setForm({
             ...form,
             ingredients: updated,
@@ -164,7 +209,6 @@ export default function AdminProducts() {
 
     const removeIngredient = (index) => {
         if (form.ingredients.length === 1) return;
-
         setForm({
             ...form,
             ingredients: form.ingredients.filter((_, i) => i !== index),
@@ -177,12 +221,10 @@ export default function AdminProducts() {
 
     const updateFaq = (index, field, value) => {
         const updated = [...form.faq];
-
         updated[index] = {
             ...updated[index],
             [field]: value,
         };
-
         setForm({
             ...form,
             faq: updated,
@@ -204,7 +246,6 @@ export default function AdminProducts() {
 
     const removeFaq = (index) => {
         if (form.faq.length === 1) return;
-
         setForm({
             ...form,
             faq: form.faq.filter((_, i) => i !== index),
@@ -212,12 +253,11 @@ export default function AdminProducts() {
     };
 
     /* =========================
-       IMAGE UPLOAD
+       IMAGE UPLOAD (Multiple)
     ========================= */
 
     const handleImages = (e) => {
         const selectedFiles = Array.from(e.target.files);
-
         const remainingSlots = 10 - images.length;
 
         if (remainingSlots <= 0) {
@@ -226,29 +266,93 @@ export default function AdminProducts() {
         }
 
         const filesToAdd = selectedFiles.slice(0, remainingSlots);
-
         const newImages = filesToAdd.map((file) => ({
             file,
             url: URL.createObjectURL(file),
         }));
 
         setImages((prev) => [...prev, ...newImages]);
-
         e.target.value = "";
     };
 
     const removeImage = (index) => {
         setImages((prev) => {
             const updated = [...prev];
-
-            if (updated[index]?.url) {
+            if (updated[index]?.file && updated[index]?.url) {
                 URL.revokeObjectURL(updated[index].url);
             }
-
             updated.splice(index, 1);
-
             return updated;
         });
+    };
+
+    /* =========================
+       OPEN ADD / EDIT
+    ========================= */
+
+    const handleOpenAdd = () => {
+        resetForm();
+        setEditingProduct(null);
+        setShow(true);
+    };
+
+    const handleOpenEdit = (product) => {
+        setEditingProduct(product);
+
+        // If product has oldPrice > price, base price was oldPrice and price was sellingPrice
+        const basePrice = (product.oldPrice && Number(product.oldPrice) > Number(product.price))
+            ? product.oldPrice
+            : product.price;
+
+        // Parse discount value and type
+        let rawDiscount = "";
+        let rawDiscountType = product.discountType || "Percentage";
+        if (product.discount) {
+            const numMatch = String(product.discount).match(/[\d.]+/);
+            rawDiscount = numMatch ? numMatch[0] : "";
+            if (String(product.discount).includes("₹") || rawDiscountType === "Fixed Amount") {
+                rawDiscountType = "Fixed Amount";
+            } else if (String(product.discount).includes("%")) {
+                rawDiscountType = "Percentage";
+            }
+        }
+
+        setForm({
+            productName: product.name || "",
+            category: product.category || "",
+            active: product.status === "Active",
+            price: basePrice !== undefined && basePrice !== null ? String(basePrice) : "",
+            discount: rawDiscount,
+            discountType: rawDiscountType,
+            unit: product.unit || "Gram",
+            shortDescription: product.shortDescription || product.subtitle || "",
+            description: product.desc || product.description || "",
+            subtitle: product.subtitle || "",
+            tag: product.tag || "Bestseller",
+            stock: product.stock !== undefined ? product.stock : 100,
+            benefits: product.points && product.points.length ? product.points : [""],
+            ingredients: product.ingredients && product.ingredients.length ? product.ingredients : [""],
+            howToUse: product.howToUse || "",
+            faq: product.faq && product.faq.length ? product.faq : [{ question: "", answer: "" }],
+            metaTitle: product.metaTitle || "",
+            metaDescription: product.metaDescription || "",
+            metaTags: product.metaTags || "",
+        });
+
+        // Preload existing images
+        const existingImgs = (product.images && product.images.length > 0)
+            ? product.images
+            : (product.image ? [product.image] : []);
+
+        setImages(
+            existingImgs.map((img) => ({
+                url: getProductImageUrl(img),
+                existingPath: img,
+            }))
+        );
+
+        setStep(1);
+        setShow(true);
     };
 
     /* =========================
@@ -257,37 +361,34 @@ export default function AdminProducts() {
 
     const resetForm = () => {
         setStep(1);
-
         setForm({
             productName: "",
             category: "",
             active: true,
-
             price: "",
             discount: "",
             discountType: "Percentage",
             unit: "Gram",
-
             shortDescription: "",
             description: "",
-
+            subtitle: "",
+            tag: "Bestseller",
+            stock: 100,
             benefits: [""],
             ingredients: [""],
             howToUse: "",
-
             faq: [
                 {
                     question: "",
                     answer: "",
                 },
             ],
-
             metaTitle: "",
             metaDescription: "",
             metaTags: "",
         });
-
         setImages([]);
+        setEditingProduct(null);
     };
 
     const closePopup = () => {
@@ -305,12 +406,10 @@ export default function AdminProducts() {
                 alert("Please enter product name.");
                 return;
             }
-
             if (!form.category) {
                 alert("Please select category.");
                 return;
             }
-
             if (!form.shortDescription.trim()) {
                 alert("Please enter short description.");
                 return;
@@ -336,35 +435,142 @@ export default function AdminProducts() {
     };
 
     /* =========================
-       SAVE PRODUCT
+       SAVE PRODUCT TO MONGODB
     ========================= */
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
 
-        const newProduct = {
-            name: form.productName,
-            category: form.category,
-            price: `₹${form.price}`,
-            status: form.active ? "Active" : "Draft",
-        };
+        if (!form.productName.trim()) {
+            alert("Please enter product name.");
+            setStep(1);
+            return;
+        }
+        if (!form.category) {
+            alert("Please select category.");
+            setStep(1);
+            return;
+        }
+        if (!form.price) {
+            alert("Please enter product price.");
+            setStep(2);
+            return;
+        }
 
-        setProducts((prev) => [newProduct, ...prev]);
+        setSubmitting(true);
+        try {
+            const pricing = calculatePricing(form.price, form.discount, form.discountType);
 
-        alert("Product added successfully.");
+            const formData = new FormData();
+            formData.append("name", form.productName.trim());
+            formData.append("category", form.category.trim());
+            // price in DB is the actual selling price customer pays
+            formData.append("price", pricing.sellingPrice);
+            // oldPrice is the base MRP (if discount was applied)
+            formData.append("oldPrice", pricing.offAmount > 0 ? pricing.base : 0);
+            formData.append("status", form.active ? "Active" : "Draft");
+            formData.append("discount", pricing.discountTag);
+            formData.append("discountType", form.discountType || "Percentage");
+            formData.append("unit", form.unit || "Gram");
+            formData.append("shortDescription", form.shortDescription.trim());
+            formData.append("description", form.description.trim());
+            formData.append(
+                "subtitle",
+                form.subtitle
+                    ? form.subtitle.trim()
+                    : form.shortDescription.replace(/<[^>]*>/g, "").trim()
+            );
+            formData.append("tag", form.tag || "Bestseller");
+            formData.append("stock", form.stock || 100);
+            formData.append("howToUse", form.howToUse || "");
+            formData.append("metaTitle", form.metaTitle || "");
+            formData.append("metaDescription", form.metaDescription || "");
+            formData.append("metaTags", form.metaTags || "");
 
-        closePopup();
+            // Arrays
+            const validBenefits = form.benefits.filter((b) => b && b.trim());
+            validBenefits.forEach((b) => formData.append("benefits", b.trim()));
+
+            const validIngredients = form.ingredients.filter((i) => i && i.trim());
+            validIngredients.forEach((i) => formData.append("ingredients", i.trim()));
+
+            const validFaqs = form.faq.filter((f) => f.question?.trim() || f.answer?.trim());
+            formData.append("faq", JSON.stringify(validFaqs));
+
+            // Preserved existing images
+            const preservedExisting = images.filter((img) => img.existingPath).map((img) => img.existingPath);
+            preservedExisting.forEach((img) => formData.append("existingImages", img));
+
+            // New image files to upload
+            images.filter((img) => img.file).forEach((img) => {
+                formData.append("images", img.file);
+            });
+
+            if (editingProduct) {
+                await api.put(`/api/products/${editingProduct._id}`, formData);
+                alert("Product updated successfully in database!");
+            } else {
+                await api.post("/api/products", formData);
+                alert("Product created successfully in database!");
+            }
+
+            closePopup();
+            await fetchProducts();
+        } catch (err) {
+            console.error("Save product error:", err);
+            alert(err.message || "Failed to save product.");
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    /* =========================
+       DELETE PRODUCT
+    ========================= */
+
+    const handleDelete = async (product) => {
+        const confirmDelete = window.confirm(`Are you sure you want to delete product "${product.name}"?`);
+        if (!confirmDelete) return;
+
+        try {
+            await api.delete(`/api/products/${product._id}`);
+            setProducts((prev) => prev.filter((p) => p._id !== product._id));
+            alert("Product deleted successfully from database.");
+        } catch (err) {
+            alert(err.message || "Failed to delete product.");
+        }
+    };
+
+    /* =========================
+       TOGGLE STATUS (Active/Draft)
+    ========================= */
+
+    const handleToggleStatus = async (product) => {
+        try {
+            const res = await api.patch(`/api/products/${product._id}/status`);
+            if (res && res.status) {
+                setProducts((prev) =>
+                    prev.map((p) => (p._id === product._id ? { ...p, status: res.status } : p))
+                );
+            }
+        } catch (err) {
+            alert("Failed to toggle product status.");
+        }
     };
 
     /* =========================
        FILTER
     ========================= */
 
-    const filteredProducts = products.filter((product) =>
-        `${product.name} ${product.category} ${product.price} ${product.status}`
+    const filteredProducts = products.filter((product) => {
+        const matchesSearch = `${product.name} ${product.category} ${product.price} ${product.status}`
             .toLowerCase()
-            .includes(search.toLowerCase())
-    );
+            .includes(search.toLowerCase());
+        const matchesStatus =
+            statusFilter === "All Status" ||
+            product.status?.toLowerCase() === statusFilter.toLowerCase();
+        return matchesSearch && matchesStatus;
+    });
 
     return (
         <AdminShell>
@@ -388,13 +594,23 @@ export default function AdminProducts() {
                     </p>
                 </div>
 
-                <button
-                    className="btn add-product-btn"
-                    onClick={() => setShow(true)}
-                >
-                    <FiPlus />
-                    Add New
-                </button>
+                <div style={{ display: "flex", gap: "10px" }}>
+                    <button
+                        className="btn"
+                        style={{ background: "#0b2518", borderColor: "#1b4a32", color: "#a5b8ad" }}
+                        onClick={fetchProducts}
+                        title="Refresh products"
+                    >
+                        <FiRefreshCw className={loading ? "spin" : ""} />
+                    </button>
+                    <button
+                        className="btn add-product-btn"
+                        onClick={handleOpenAdd}
+                    >
+                        <FiPlus />
+                        Add New
+                    </button>
+                </div>
 
             </div>
 
@@ -407,17 +623,21 @@ export default function AdminProducts() {
 
                 <input
                     className="input"
-                    placeholder="Search products..."
+                    placeholder="Search products by name, category, price..."
                     value={search}
                     onChange={(e) =>
                         setSearch(e.target.value)
                     }
                 />
 
-                <select className="select">
-                    <option>All Status</option>
-                    <option>Active</option>
-                    <option>Draft</option>
+                <select
+                    className="select"
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                >
+                    <option value="All Status">All Status</option>
+                    <option value="Active">Active Only</option>
+                    <option value="Draft">Draft Only</option>
                 </select>
 
             </div>
@@ -437,65 +657,137 @@ export default function AdminProducts() {
                     <span>Actions</span>
                 </div>
 
-                {filteredProducts.map((product, index) => (
-
-                    <div
-                        className="table-row"
-                        key={index}
-                    >
-
-                        <span className="product-name-cell">
-                            {product.name}
-                        </span>
-
-                        <span>
-                            {product.category}
-                        </span>
-
-                        <span>
-                            {product.price}
-                        </span>
-
-                        <span>
-                            <span
-                                className={
-                                    product.status === "Active"
-                                        ? "status active"
-                                        : "status draft"
-                                }
-                            >
-                                {product.status}
-                            </span>
-                        </span>
-
-                        <div className="row-actions">
-
-                            <button title="View">
-                                <FiEye />
-                            </button>
-
-                            <button title="Edit">
-                                <FiEdit2 />
-                            </button>
-
-                            <button
-                                className="delete-action"
-                                title="Delete"
-                            >
-                                <FiTrash2 />
-                            </button>
-
-                        </div>
-
+                {loading ? (
+                    <div style={{ padding: "40px", textAlign: "center", color: "#8da497" }}>
+                        <FiRefreshCw className="spin" size={28} />
+                        <p style={{ marginTop: "10px" }}>Loading products from database...</p>
                     </div>
+                ) : filteredProducts.length === 0 ? (
+                    <div style={{ padding: "40px", textAlign: "center", color: "#8da497" }}>
+                        <p>No products found matching your search.</p>
+                        <button className="btn" onClick={handleOpenAdd} style={{ marginTop: "10px" }}>
+                            <FiPlus /> Add First Product
+                        </button>
+                    </div>
+                ) : (
+                    filteredProducts.map((product, index) => {
+                        const productImg = getProductImageUrl(
+                            product.image || (product.images && product.images[0])
+                        );
+                        const imgCount = (product.images && product.images.length) || (product.image ? 1 : 0);
 
-                ))}
+                        return (
+                            <div
+                                className="table-row"
+                                key={product._id || product.id || index}
+                            >
+
+                                <span
+                                    className="product-name-cell"
+                                    style={{ display: "flex", alignItems: "center", gap: "12px" }}
+                                >
+                                    <img
+                                        src={productImg}
+                                        alt={product.name}
+                                        style={{
+                                            width: "42px",
+                                            height: "42px",
+                                            objectFit: "cover",
+                                            borderRadius: "8px",
+                                            border: "1px solid #1c402e",
+                                            background: "#06150e",
+                                            flexShrink: 0
+                                        }}
+                                    />
+                                    <div>
+                                        <strong style={{ color: "#fff", display: "block", fontSize: "14px" }}>
+                                            {product.name}
+                                        </strong>
+                                        <small style={{ color: "#799285", fontSize: "11px" }}>
+                                            📷 {imgCount} {imgCount === 1 ? "image" : "images"}
+                                            {product.subtitle ? ` · ${product.subtitle}` : ""}
+                                        </small>
+                                    </div>
+                                </span>
+
+                                <span>
+                                    {product.category}
+                                </span>
+
+                                <span>
+                                    <strong style={{ color: "#e6ca85", fontSize: "14px" }}>
+                                        ₹{product.price}
+                                    </strong>
+                                    {product.oldPrice && Number(product.oldPrice) > Number(product.price) && (
+                                        <del style={{ marginLeft: "6px", color: "#6e8478", fontSize: "11px" }}>
+                                            ₹{product.oldPrice}
+                                        </del>
+                                    )}
+                                    {product.discount && (
+                                        <span style={{ display: "block", fontSize: "11px", color: "#22c55e", fontWeight: 500 }}>
+                                            {product.discount}
+                                        </span>
+                                    )}
+                                </span>
+
+                                <span>
+                                    <span
+                                        className={
+                                            product.status === "Active"
+                                                ? "status active"
+                                                : "status draft"
+                                        }
+                                        onClick={() => handleToggleStatus(product)}
+                                        style={{ cursor: "pointer" }}
+                                        title="Click to toggle Active/Draft"
+                                    >
+                                        {product.status}
+                                    </span>
+                                </span>
+
+                                <div className="row-actions">
+
+                                    <Link
+                                        to={`/product/${product.slug}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        title="View on Live Store"
+                                        style={{ display: "flex", alignItems: "center" }}
+                                    >
+                                        <button type="button" title="View Product Page">
+                                            <FiEye />
+                                        </button>
+                                    </Link>
+
+                                    <button
+                                        type="button"
+                                        title="Edit Product"
+                                        onClick={() => handleOpenEdit(product)}
+                                    >
+                                        <FiEdit2 />
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        className="delete-action"
+                                        title="Delete Product"
+                                        onClick={() => handleDelete(product)}
+                                    >
+                                        <FiTrash2 />
+                                    </button>
+
+                                </div>
+
+                            </div>
+                        );
+                    })
+                )}
 
             </div>
 
 
             {/* =====================================================
-                ADD PRODUCT MODAL
+                ADD / EDIT PRODUCT MODAL
             ===================================================== */}
 
             {show && (
@@ -516,12 +808,13 @@ export default function AdminProducts() {
                                 </span>
 
                                 <h2>
-                                    Add New Product
+                                    {editingProduct ? "Edit Product" : "Add New Product"}
                                 </h2>
 
                                 <p>
-                                    Create and publish a new
-                                    product.
+                                    {editingProduct
+                                        ? "Update product details and manage all uploaded images."
+                                        : "Create and publish a new product with multiple image uploads."}
                                 </p>
                             </div>
 
@@ -746,20 +1039,20 @@ export default function AdminProducts() {
                                                 <span>*</span>
                                             </label>
 
-                                            <textarea
-                                                className="input textarea"
-                                                rows="3"
-                                                value={
-                                                    form.shortDescription
-                                                }
-                                                onChange={(e) =>
-                                                    updateForm(
-                                                        "shortDescription",
-                                                        e.target.value
-                                                    )
-                                                }
-                                                placeholder="Write a short product description..."
-                                            />
+                                            <div className="quill-editor-wrapper">
+                                                <ReactQuill
+                                                    theme="snow"
+                                                    value={form.shortDescription}
+                                                    onChange={(val) =>
+                                                        updateForm(
+                                                            "shortDescription",
+                                                            val
+                                                        )
+                                                    }
+                                                    modules={shortQuillModules}
+                                                    placeholder="Write a short product description..."
+                                                />
+                                            </div>
 
                                         </div>
 
@@ -770,20 +1063,20 @@ export default function AdminProducts() {
                                                 Full Description
                                             </label>
 
-                                            <textarea
-                                                className="input textarea"
-                                                rows="6"
-                                                value={
-                                                    form.description
-                                                }
-                                                onChange={(e) =>
-                                                    updateForm(
-                                                        "description",
-                                                        e.target.value
-                                                    )
-                                                }
-                                                placeholder="Write complete product description..."
-                                            />
+                                            <div className="quill-editor-wrapper quill-full">
+                                                <ReactQuill
+                                                    theme="snow"
+                                                    value={form.description}
+                                                    onChange={(val) =>
+                                                        updateForm(
+                                                            "description",
+                                                            val
+                                                        )
+                                                    }
+                                                    modules={fullQuillModules}
+                                                    placeholder="Write complete product description with bold, lists, and formatting..."
+                                                />
+                                            </div>
 
                                         </div>
 
@@ -956,23 +1249,30 @@ export default function AdminProducts() {
                                         </div>
 
 
-                                        <div className="field price-preview">
+                                        <div className="field price-preview full">
 
                                             <label>
-                                                Final Price Preview
+                                                Final Price & Discount Calculation
                                             </label>
 
-                                            <div className="price-preview-box">
-
-                                                <span>
-                                                    Selling Price
-                                                </span>
-
-                                                <strong>
-                                                    ₹
-                                                    {form.price || "0"}
-                                                </strong>
-
+                                            <div className="pricing-calculation-card">
+                                                <div className="calc-row">
+                                                    <span>Original Price (MRP):</span>
+                                                    <strong>₹{pricing.base || 0}</strong>
+                                                </div>
+                                                <div className="calc-row discount-row">
+                                                    <span>Discount ({form.discountType}):</span>
+                                                    <strong className="text-green">
+                                                        {pricing.offAmount > 0
+                                                            ? `- ₹${pricing.offAmount} (${pricing.discountTag})`
+                                                            : "₹0 (No Discount)"}
+                                                    </strong>
+                                                </div>
+                                                <div className="calc-divider"></div>
+                                                <div className="calc-row final-row">
+                                                    <span>Final Selling Price (Customer Pays):</span>
+                                                    <strong className="text-gold">₹{pricing.sellingPrice}</strong>
+                                                </div>
                                             </div>
 
                                         </div>
@@ -1536,12 +1836,31 @@ export default function AdminProducts() {
 
                                             <div>
                                                 <span>
-                                                    Price
+                                                    Base (MRP)
                                                 </span>
 
                                                 <strong>
-                                                    ₹
-                                                    {form.price || "0"}
+                                                    ₹{pricing.base}
+                                                </strong>
+                                            </div>
+
+                                            <div>
+                                                <span>
+                                                    Discount
+                                                </span>
+
+                                                <strong style={{ color: pricing.offAmount > 0 ? "#22c55e" : "inherit" }}>
+                                                    {pricing.offAmount > 0 ? pricing.discountTag : "None"}
+                                                </strong>
+                                            </div>
+
+                                            <div>
+                                                <span>
+                                                    Selling Price
+                                                </span>
+
+                                                <strong style={{ color: "#d8b56a" }}>
+                                                    ₹{pricing.sellingPrice}
                                                 </strong>
                                             </div>
 
@@ -1636,9 +1955,15 @@ export default function AdminProducts() {
                                     <button
                                         type="submit"
                                         className="btn save-product-btn"
+                                        disabled={submitting}
+                                        style={{ opacity: submitting ? 0.7 : 1, cursor: submitting ? "not-allowed" : "pointer" }}
                                     >
                                         <FiCheck />
-                                        Save Product
+                                        {submitting
+                                            ? "Saving..."
+                                            : editingProduct
+                                            ? "Update Product"
+                                            : "Save Product"}
                                     </button>
 
                                 )}

@@ -8,18 +8,20 @@ import {
   setDirectCheckoutItem,
   subscribeToStorage
 } from "../lib/cartWishlist";
+import { getProductImageUrl } from "../lib/api";
 import "./ProductCard.css";
 
 export default function ProductCard({ product }) {
   const nav = useNavigate();
   const [wished, setWished] = useState(false);
+  const productId = product._id || product.id;
 
   useEffect(() => {
-    setWished(isInWishlist(product.id));
+    setWished(isInWishlist(productId));
     return subscribeToStorage(() => {
-      setWished(isInWishlist(product.id));
+      setWished(isInWishlist(productId));
     });
-  }, [product.id]);
+  }, [productId]);
 
   const handleCardClick = () => {
     nav(`/product/${product.slug}`, { state: { product } });
@@ -47,7 +49,7 @@ export default function ProductCard({ product }) {
   return (
     <article className="product-card" onClick={handleCardClick}>
       <div className="pc-media">
-        <span className="badge">{product.tag || "Bestseller"}</span>
+        <span className="badge">{product.discount || product.tag || "Bestseller"}</span>
         <button
           type="button"
           className={`pc-heart ${wished ? "active" : ""}`}
@@ -58,9 +60,9 @@ export default function ProductCard({ product }) {
           <FiHeart style={{ fill: wished ? "currentColor" : "none" }} />
         </button>
 
-        {product.image ? (
+        {(product.image || (product.images && product.images[0])) ? (
           <img
-            src={product.image}
+            src={getProductImageUrl(product.image || product.images[0])}
             alt={product.name}
             className="product-real-img"
           />
@@ -100,7 +102,24 @@ export default function ProductCard({ product }) {
 
         <div className="price-row">
           <span className="price">₹{product.price}</span>
-          <span className="old-price">₹{product.old}</span>
+          {(product.oldPrice || product.old) && Number(product.oldPrice || product.old) > Number(product.price) && (
+            <span className="old-price">₹{product.oldPrice || product.old}</span>
+          )}
+          {product.discount && (
+            <span
+              style={{
+                marginLeft: "auto",
+                fontSize: "11px",
+                color: "#22c55e",
+                background: "rgba(34, 197, 94, 0.12)",
+                padding: "2px 6px",
+                borderRadius: "4px",
+                fontWeight: 600,
+              }}
+            >
+              {product.discount}
+            </span>
+          )}
         </div>
 
         <div className="pc-actions">
