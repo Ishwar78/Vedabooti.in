@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useMemo, useState, useEffect } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import {
     FiSliders,
     FiSearch,
@@ -10,50 +10,74 @@ import SiteHeader from "../../components/SiteHeader";
 import SiteFooter from "../../components/SiteFooter";
 import ProductCard from "../../components/ProductCard";
 import { allProducts } from "../../data/products";
+import api from "../../lib/api";
 
 import "./Shop.css";
 
-
-const categoryCounts = {
-    "Immunity Boosters": 5,
-    "Hair Care": 3,
-    "Skin Care": 4,
-    "Digestive Health": 3,
-    "Herbal Teas": 2,
-    "Wellness Packs": 4
-};
-
-
-const categories = [
-    "All Products",
-    "Immunity",
-    "Hair Care",
-    "Skin Care",
-    "Digestive",
-    "Herbal Tea",
-    "Wellness"
-];
-
-
 export default function Shop() {
+    const [searchParams] = useSearchParams();
+    const initialCategory = searchParams.get("category") || "All Products";
 
-    const [cat, setCat] = useState("All Products");
+    const [dbCategories, setDbCategories] = useState([]);
+    const [cat, setCat] = useState(initialCategory);
     const [sort, setSort] = useState("Featured");
     const [term, setTerm] = useState("");
 
+    useEffect(() => {
+        const categoryFromUrl = searchParams.get("category");
+        if (categoryFromUrl) {
+            setCat(categoryFromUrl);
+        }
+    }, [searchParams]);
+
+    useEffect(() => {
+        let isMounted = true;
+        const loadCategories = async () => {
+            try {
+                const res = await api.get("/api/categories?status=Active");
+                if (isMounted) {
+                    if (res && res.categories) {
+                        setDbCategories(res.categories);
+                    } else if (Array.isArray(res)) {
+                        setDbCategories(res);
+                    }
+                }
+            } catch (err) {
+                console.error("Failed to load categories in Shop:", err);
+            }
+        };
+        loadCategories();
+        return () => {
+            isMounted = false;
+        };
+    }, []);
+
+    const categoryTabs = useMemo(() => {
+        return ["All Products", ...dbCategories.map((c) => c.name)];
+    }, [dbCategories]);
+
+    const categoryCounts = useMemo(() => {
+        const counts = {};
+        dbCategories.forEach((category) => {
+            const cleanName = category.name.toLowerCase().split(" ")[0];
+            const count = allProducts.filter(
+                (p) =>
+                    p.subtitle.toLowerCase().includes(cleanName) ||
+                    p.name.toLowerCase().includes(cleanName)
+            ).length;
+            counts[category.name] = count;
+        });
+        return counts;
+    }, [dbCategories]);
+
     const filtered = useMemo(() => {
-
         let products = allProducts.filter(product => {
-
+            const selectedCatClean = cat.toLowerCase();
             const categoryMatch =
                 cat === "All Products" ||
-                product.subtitle
-                    .toLowerCase()
-                    .includes(
-                        cat
-                            .toLowerCase()
-                            .split(" ")[0]
-                    );
+                product.subtitle.toLowerCase().includes(selectedCatClean) ||
+                product.name.toLowerCase().includes(selectedCatClean) ||
+                selectedCatClean.includes(product.subtitle.toLowerCase().split(" ")[0]);
 
             const searchMatch =
                 product.name
@@ -61,7 +85,6 @@ export default function Shop() {
                     .includes(term.toLowerCase());
 
             return categoryMatch && searchMatch;
-
         });
 
 
@@ -129,7 +152,7 @@ export default function Shop() {
 
                     <div className="shop-cats">
 
-                        {categories.map(category => (
+                        {categoryTabs.map((category) => (
 
                             <button
                                 type="button"
@@ -255,28 +278,33 @@ export default function Shop() {
                                 </b>
 
 
-                                {Object.entries(
-                                    categoryCounts
-                                ).map(
-                                    ([name, count]) => (
+                                {dbCategories.map((c) => {
+                                    const count = categoryCounts[c.name] ?? 0;
+                                    const isSelected = cat === c.name;
 
-                                        <label key={name}>
-
+                                    return (
+                                        <label key={c._id || c.name}>
                                             <input
                                                 type="checkbox"
+                                                checked={isSelected}
+                                                onChange={() =>
+                                                    setCat(
+                                                        isSelected
+                                                            ? "All Products"
+                                                            : c.name
+                                                    )
+                                                }
                                             />
-
-                                            <span>
-                                                {name}
-                                            </span>
-
-                                            <small>
-                                                ({count})
-                                            </small>
-
+                                            <span>{c.name}</span>
+                                            <small>({count})</small>
                                         </label>
+                                    );
+                                })}
 
-                                    )
+                                {dbCategories.length === 0 && (
+                                    <span style={{ fontSize: "12px", color: "#879990", padding: "4px 0" }}>
+                                        No categories yet
+                                    </span>
                                 )}
 
                             </div>

@@ -164,7 +164,7 @@
  @media(max-width:780px) {
      .top-strip {
          gap: 8px;
-         font-size: 8px;
+         font-size: 10px;
          justify-content: space-around
      }
 

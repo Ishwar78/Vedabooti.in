@@ -18,6 +18,7 @@ import ProductCard from "../../components/ProductCard";
 import SiteHeader from "../../components/SiteHeader";
 import SiteFooter from "../../components/SiteFooter";
 import { homeProducts as products } from "../../data/products";
+import api, { getCategoryImageUrl, getVideoUrl } from "../../lib/api";
 
 import "./Home.css";
 
@@ -42,44 +43,11 @@ const heroSlides = [
     }
 ];
 
-const cats = [
-    {
-        name: "Skin Care",
-        subtitle: "Glow naturally",
-        image: "/assets/skincare.png"
-    },
-    {
-        name: "Hair Care",
-        subtitle: "Stronger, healthier hair",
-        image: "/assets/haircare.png"
-    },
-    {
-        name: "Health & Wellness",
-        subtitle: "Balance your body",
-        image: "/assets/healt.png"
-    },
-    {
-        name: "Immunity Boost",
-        subtitle: "Stay strong naturally",
-        image: "/assets/imunity.png"
-    },
-    {
-        name: "Herbal Teas",
-        subtitle: "Wellness in every sip",
-        image: "/assets/herbal.png"
-    },
-    {
-        name: "Combo Packs",
-        subtitle: "More care, more value",
-        image: "/assets/combo.png"
-    }
-];
-
-const videoReels = [
+const defaultVideoReels = [
     {
         id: "reel-1",
         title: "Honey",
-        tag: "100 NATURAL",
+        tag: "100% NATURAL",
         videoSrc: "/assets/Video.mp4",
         link: "/shop"
     },
@@ -114,6 +82,48 @@ const videoReels = [
 ];
 
 export default function Home() {
+    // Dynamic Categories from MongoDB
+    const [categories, setCategories] = useState([]);
+
+    // Dynamic Customer Video Reels from MongoDB
+    const [videoReels, setVideoReels] = useState(defaultVideoReels);
+
+    useEffect(() => {
+        let isMounted = true;
+        const loadCategories = async () => {
+            try {
+                const res = await api.get("/api/categories?status=Active");
+                if (isMounted) {
+                    if (res && res.categories) {
+                        setCategories(res.categories);
+                    } else if (Array.isArray(res)) {
+                        setCategories(res);
+                    }
+                }
+            } catch (err) {
+                console.error("Failed to load categories on Home:", err);
+            }
+        };
+
+        const loadVideos = async () => {
+            try {
+                const res = await api.get("/api/videos?status=Active");
+                if (isMounted && res && res.videos && res.videos.length > 0) {
+                    setVideoReels(res.videos);
+                }
+            } catch (err) {
+                console.error("Failed to load customer video reels:", err);
+            }
+        };
+
+        loadCategories();
+        loadVideos();
+
+        return () => {
+            isMounted = false;
+        };
+    }, []);
+
     // Hero Banner Slider State
     const [heroSlide, setHeroSlide] = useState(0);
     const [isHeroHovered, setIsHeroHovered] = useState(false);
@@ -350,12 +360,12 @@ export default function Home() {
 
             <div className="goal-grid">
 
-                {cats.map((cat, index) => (
+                {categories.map((cat, index) => (
 
                     <Link
-                        to="/categories"
+                        to={`/shop?category=${encodeURIComponent(cat.name)}`}
                         className="goal-card"
-                        key={cat.name}
+                        key={cat._id || cat.name}
                     >
 
                         {/* IMAGE */}
@@ -365,9 +375,12 @@ export default function Home() {
                             <div className="goal-image-ring">
 
                                 <img
-                                    src={cat.image}
+                                    src={getCategoryImageUrl(cat.image)}
                                     alt={cat.name}
                                     className="goal-img-thumb"
+                                    onError={(e) => {
+                                        e.currentTarget.src = "/assets/category-placeholder.jpg";
+                                    }}
                                 />
 
                             </div>
@@ -377,12 +390,12 @@ export default function Home() {
 
                             <span className="goal-floating-icon">
 
-                                {index === 0 && <FiFeather />}
-                                {index === 1 && <span className="hair-icon">〰</span>}
-                                {index === 2 && <FiHeart />}
-                                {index === 3 && <FiShield />}
-                                {index === 4 && <span className="tea-icon">☕</span>}
-                                {index === 5 && <span>🎁</span>}
+                                {index % 6 === 0 && <FiFeather />}
+                                {index % 6 === 1 && <span className="hair-icon">〰</span>}
+                                {index % 6 === 2 && <FiHeart />}
+                                {index % 6 === 3 && <FiShield />}
+                                {index % 6 === 4 && <span className="tea-icon">☕</span>}
+                                {index % 6 === 5 && <span>🎁</span>}
 
                             </span>
 
@@ -398,7 +411,7 @@ export default function Home() {
                             </h3>
 
                             <p>
-                                {cat.subtitle}
+                                {cat.subtitle || "Ayurvedic Care"}
                             </p>
 
                             <span className="goal-line"></span>
@@ -408,6 +421,12 @@ export default function Home() {
                     </Link>
 
                 ))}
+
+                {categories.length === 0 && (
+                    <div style={{ padding: "30px 20px", color: "#879990", textAlign: "center", width: "100%" }}>
+                        <p style={{ margin: 0 }}>Categories added from the Admin panel will appear here.</p>
+                    </div>
+                )}
 
             </div>
 
@@ -620,7 +639,7 @@ export default function Home() {
                                     const isActive = index === activeVideo;
                                     return (
                                         <div
-                                            key={reel.id}
+                                            key={reel._id || reel.id || index}
                                             className={`reel-card ${isActive ? "active-phone" : "side-card"}`}
                                             onClick={() => setActiveVideo(index)}
                                         >
@@ -640,14 +659,14 @@ export default function Home() {
 
                                             {/* Category / Tag Pill */}
                                             <div className="reel-tag-badge">
-                                                {reel.tag}
+                                                {reel.tag || "100% NATURAL"}
                                             </div>
 
                                             {/* Video Element */}
                                             <div className="reel-video-container">
                                                 <video
                                                     ref={(el) => (videoRefs.current[index] = el)}
-                                                    src={reel.videoSrc}
+                                                    src={getVideoUrl(reel.videoSrc)}
                                                     loop
                                                     muted={isMuted}
                                                     playsInline
@@ -670,7 +689,7 @@ export default function Home() {
                                                     {reel.title}
                                                 </h3>
                                                 <Link
-                                                    to={reel.link}
+                                                    to={reel.link || "/shop"}
                                                     className="reel-view-btn"
                                                     onClick={(e) => e.stopPropagation()}
                                                 >

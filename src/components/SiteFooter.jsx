@@ -1,49 +1,206 @@
 import React from "react";
-import {Link} from "react-router-dom";
-import {FiInstagram,FiFacebook,FiYoutube,FiMail} from "react-icons/fi";
+import { Link } from "react-router-dom";
+import {
+  FiInstagram,
+  FiFacebook,
+  FiYoutube,
+  FiMail
+} from "react-icons/fi";
 import "./SiteFooter.css";
 
-export default function SiteFooter(){
- return <footer className="site-footer">
-  {/* <div className="trust-row">
-   <div><span>🚚</span><strong>Free Shipping</strong><small>on orders above ₹499</small></div>
-   <div><span>♢</span><strong>Secure Payments</strong><small>100% safe & secure</small></div>
-   <div><span>↻</span><strong>Easy Returns</strong><small>Hassle-free returns</small></div>
-   <div><span>◉</span><strong>Customer Support</strong><small>We're here to help</small></div>
-  </div> */}
-  <div className="footer-main container">
-   <div className="footer-brand">
-    <img src="/assets/veda-booti-logo.png" alt="Veda Booti"/>
-    <p>Natural care for a better tomorrow.</p>
-    </div>
-   <div>
-    <h4>Quick Links</h4>
-    <Link to="/">Home</Link>
-    <Link to="/shop">Shop</Link>
-    <Link to="/categories">Categories</Link>
-    <Link to="/about">About Us</Link>
-    <Link to="/blog">Blog</Link>
-    </div>
-   <div><h4>Customer Care</h4>
-   <Link to="/user">My Account</Link>
-   <Link to="/orders">Track Order</Link>
-   <Link to="/support">Returns & Refunds</Link>
-   <Link to="/support">FAQs</Link>
-   <Link to="/support">Shipping Policy</Link>
-   </div>
-   <div className="newsletter">
-    <h4>Subscribe to Our Newsletter</h4>
-    <p>Get exclusive offers, health tips and updates.</p>
-    <form onSubmit={e=>e.preventDefault()}><input placeholder="Enter your email"/>
-    <button className="btn">Subscribe</button>
-    </form>
-    <div className="socials">
-        <FiFacebook/><FiInstagram/><FiYoutube/><FiMail/></div></div>
-   <div className="footer-quote">Goodness<br/>from Nature<br/><em>Always.</em></div>
-  </div>
-  <div className="footer-bottom">
-    <span>© 2026 Veda Booti Health Care. All rights reserved.</span>
-    <span>Made with ♥ for a healthier tomorrow.</span>
-    </div>
- </footer>
+export default function SiteFooter() {
+  return (
+    <footer className="site-footer">
+
+      {/* ================= PREMIUM TOP LINE ================= */}
+      <div className="footer-top-glow"></div>
+
+      {/* ================= MAIN FOOTER ================= */}
+      <div className="footer-main container">
+
+        {/* BRAND */}
+        <div className="footer-brand">
+
+          <div className="footer-logo-wrap">
+            <img
+              src="/assets/veda-booti-logo.png"
+              alt="Veda Booti"
+            />
+          </div>
+
+          <p className="footer-brand-text">
+            Natural care for a better tomorrow.
+          </p>
+
+          <p className="footer-brand-description">
+            Discover thoughtfully crafted herbal wellness
+            products inspired by the goodness of nature.
+          </p>
+
+          <div className="footer-brand-line"></div>
+
+        </div>
+
+        {/* QUICK LINKS */}
+        <div className="footer-column">
+
+          <h4>Quick Links</h4>
+
+          <Link to="/">
+            Home
+          </Link>
+
+          <Link to="/shop">
+            Shop
+          </Link>
+
+          <Link to="/categories">
+            Categories
+          </Link>
+
+          <Link to="/about">
+            About Us
+          </Link>
+
+          <Link to="/blog">
+            Blog
+          </Link>
+
+        </div>
+
+        {/* CUSTOMER CARE */}
+        <div className="footer-column">
+
+          <h4>Customer Care</h4>
+
+          <Link to="/support">
+            Returns & Refunds
+          </Link>
+
+          <Link to="/support">
+            FAQs
+          </Link>
+
+          <Link to="/shipping-policy">
+            Shipping Policy
+          </Link>
+           
+            <Link to="Privacy-Policy">
+            Privacy Policy
+          </Link>
+
+
+           <Link to="/terms-&-condition">
+            Terms & Conditions
+          </Link>
+
+
+        </div>
+
+        {/* SOCIAL / NEWSLETTER */}
+        <div className="newsletter">
+
+          <h4>
+            Stay Connected
+          </h4>
+
+          <p>
+            Get exclusive offers, wellness tips and
+            updates from Veda Booti.
+          </p>
+
+          <div className="newsletter-highlight">
+            <FiMail />
+
+            <span>
+              Follow our wellness journey
+            </span>
+          </div>
+
+          {/* SOCIAL ICONS */}
+          <div className="socials">
+
+            <a
+              href="#"
+              aria-label="Facebook"
+              className="social-icon"
+            >
+              <FiFacebook />
+            </a>
+
+            <a
+              href="#"
+              aria-label="Instagram"
+              className="social-icon"
+            >
+              <FiInstagram />
+            </a>
+
+            <a
+              href="#"
+              aria-label="YouTube"
+              className="social-icon"
+            >
+              <FiYoutube />
+            </a>
+
+            <a
+              href="mailto:support@vedabooti.com"
+              aria-label="Email"
+              className="social-icon"
+            >
+              <FiMail />
+            </a>
+
+          </div>
+
+        </div>
+
+        {/* QUOTE */}
+        <div className="footer-quote">
+
+          <span className="quote-small">
+            ROOTED IN
+          </span>
+
+          <strong>
+            Goodness
+          </strong>
+
+          <strong>
+            from Nature
+          </strong>
+
+          <em>
+            Always.
+          </em>
+
+          <span className="quote-leaf">
+            ✦
+          </span>
+
+        </div>
+
+      </div>
+
+      {/* ================= FOOTER BOTTOM ================= */}
+      <div className="footer-bottom">
+
+        <div className="footer-bottom-inner">
+
+          <span>
+            © 2026 Veda Booti Health Care.
+            All rights reserved.
+          </span>
+
+          <span>
+            Made with <b>♥</b> for a healthier tomorrow.
+          </span>
+
+        </div>
+
+      </div>
+
+    </footer>
+  );
 }

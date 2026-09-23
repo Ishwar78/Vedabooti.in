@@ -1,12 +1,14 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import connectDB from "./config/db.js";
 import seedAdmin from "./config/seedAdmin.js";
 import adminRoute from "./route/adminRoute.js";
-
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+import categoryRoute from "./route/categoryRoute.js";
+import contactRoute from "./route/contactRoute.js";
+import videoRoute from "./route/videoRoute.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -21,10 +23,22 @@ const PORT = process.env.PORT || 5065;
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
 
+// Serve uploaded files statically
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
 // Routes
-// Mount both /api/admin and /admin for flexibility with frontend requests
+// Mount both /api/... and /... for maximum flexibility with frontend requests
 app.use("/api/admin", adminRoute);
 app.use("/admin", adminRoute);
+
+app.use("/api/categories", categoryRoute);
+app.use("/categories", categoryRoute);
+
+app.use("/api/contact", contactRoute);
+app.use("/contact", contactRoute);
+
+app.use("/api/videos", videoRoute);
+app.use("/videos", videoRoute);
 
 // Root health check
 app.get("/", (req, res) => {

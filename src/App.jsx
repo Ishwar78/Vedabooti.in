@@ -19,6 +19,9 @@ import Wishlist from "./pages/Wishlist/Wishlist";
 import Checkout from "./pages/Checkout/Checkout";
 import ThankYou from "./pages/ThankYou/ThankYou";
 
+import ShippingPolicy from "./pages/ShippingPolicy/ShippingPolicy";
+import PrivacyPolicy from "./pages/PrivacyPolicy/PrivacyPolicy";
+import TermsConditions from "./pages/TermsConditions/TermsConditions";
 // ================================
 // USER PAGES
 // ================================
@@ -117,10 +120,15 @@ export default function App() {
                     element={<ThankYou />}
                 />
 
-
-                {/* =====================================
-                    USER ROUTES
-                ===================================== */}
+                <Route 
+                       path="/shipping-policy"
+                       element={<ShippingPolicy />}
+                       />
+              
+                 <Route path="/Privacy-Policy" element={<PrivacyPolicy />} />
+                 <Route path="/terms-&-condition" element={<TermsConditions />} />
+      
+              {/* user  */}
 
                 <Route
                     path="/login"
@@ -154,6 +162,11 @@ export default function App() {
 
                 <Route
                     path="/support"
+                    element={<Support />}
+                />
+
+                <Route
+                    path="/contact"
                     element={<Support />}
                 />
 

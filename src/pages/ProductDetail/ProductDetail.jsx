@@ -8,7 +8,10 @@ import {
     FiTruck,
     FiShield,
     FiRotateCcw,
-    FiChevronDown
+    FiChevronDown,
+    FiStar,
+    FiUser,
+    FiSend
 } from "react-icons/fi";
 
 import SiteHeader from "../../components/SiteHeader";
@@ -58,6 +61,89 @@ export default function ProductDetail() {
     const [qty, setQty] = useState(1);
     const [tab, setTab] = useState("Description");
     const [wished, setWished] = useState(false);
+    const [userReviews, setUserReviews] = useState([]);
+    const [showReviewForm, setShowReviewForm] = useState(false);
+    const [reviewForm, setReviewForm] = useState({
+        name: "",
+        rating: 5,
+        comment: ""
+    });
+
+    const reviewStorageKey = `vedaBootiReviews_${product.id || product.slug}`;
+
+    useEffect(() => {
+        const savedReviews = localStorage.getItem(reviewStorageKey);
+
+        if (savedReviews) {
+            try {
+                setUserReviews(JSON.parse(savedReviews));
+            } catch {
+                setUserReviews([]);
+            }
+        } else {
+            setUserReviews([
+                {
+                    id: "demo-1",
+                    name: "Priya Sharma",
+                    rating: 5,
+                    comment: "Really good quality product. Packaging was neat and the product feels genuine.",
+                    date: "18 Sep 2026"
+                },
+                {
+                    id: "demo-2",
+                    name: "Rahul Verma",
+                    rating: 4,
+                    comment: "Good experience overall. Product quality is nice and delivery was smooth.",
+                    date: "12 Sep 2026"
+                },
+                {
+                    id: "demo-3",
+                    name: "Neha Singh",
+                    rating: 5,
+                    comment: "I liked the product and would definitely consider ordering again.",
+                    date: "06 Sep 2026"
+                }
+            ]);
+        }
+    }, [reviewStorageKey]);
+
+    const handleReviewInput = (e) => {
+        const { name, value } = e.target;
+        setReviewForm(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleReviewSubmit = (e) => {
+        e.preventDefault();
+
+        if (!reviewForm.name.trim() || !reviewForm.comment.trim()) {
+            alert("Please enter your name and review.");
+            return;
+        }
+
+        const newReview = {
+            id: Date.now(),
+            name: reviewForm.name.trim(),
+            rating: Number(reviewForm.rating),
+            comment: reviewForm.comment.trim(),
+            date: new Date().toLocaleDateString("en-IN", {
+                day: "2-digit",
+                month: "short",
+                year: "numeric"
+            })
+        };
+
+        const updatedReviews = [newReview, ...userReviews];
+
+        setUserReviews(updatedReviews);
+        localStorage.setItem(reviewStorageKey, JSON.stringify(updatedReviews));
+        setReviewForm({ name: "", rating: 5, comment: "" });
+        setShowReviewForm(false);
+        setTab("Reviews");
+    };
+
+    const averageUserRating = userReviews.length
+        ? (userReviews.reduce((sum, review) => sum + Number(review.rating || 0), 0) / userReviews.length).toFixed(1)
+        : Number(product.rating || 0).toFixed(1);
 
     useEffect(() => {
         setWished(isInWishlist(product.id || product.slug));
@@ -472,7 +558,8 @@ export default function ProductDetail() {
                             "Benefits",
                             "Ingredients",
                             "How to Use",
-                            "FAQs"
+                            "FAQs",
+                            "Reviews"
                         ].map(tabName => (
 
                             <button
@@ -513,33 +600,155 @@ export default function ProductDetail() {
                             </h2>
 
 
-                            <p>
+                            {tab === "Reviews" ? (
+                                <div className="product-reviews-panel">
 
-                                {tab === "Description"
-                                    ? product.desc
-                                    : tab === "Benefits"
-                                        ? "Traditionally used as part of balanced wellness routines. Follow the product label and your healthcare professional's advice where appropriate."
-                                        : tab === "Ingredients"
-                                            ? "Single-herb formulation with carefully processed botanical ingredients."
-                                            : tab === "How to Use"
-                                                ? "Refer to the product label for recommended usage, storage and preparation instructions."
-                                                : "For product-related questions, please contact our support team for assistance."
-                                }
+                                    <div className="reviews-summary">
+                                        <div className="reviews-score">
+                                            <strong>{averageUserRating}</strong>
+                                            <div className="review-stars large">
+                                                {[1, 2, 3, 4, 5].map(star => (
+                                                    <FiStar
+                                                        key={star}
+                                                        className={star <= Math.round(Number(averageUserRating)) ? "filled" : ""}
+                                                    />
+                                                ))}
+                                            </div>
+                                            <small>{userReviews.length} customer reviews</small>
+                                        </div>
 
-                            </p>
+                                        <button
+                                            type="button"
+                                            className="review-write-btn"
+                                            onClick={() => setShowReviewForm(prev => !prev)}
+                                        >
+                                            <FiStar />
+                                            {showReviewForm ? "Close Review Form" : "Write a Review"}
+                                        </button>
+                                    </div>
 
+                                    {showReviewForm && (
+                                        <form className="review-form" onSubmit={handleReviewSubmit}>
+                                            <div className="review-form-head">
+                                                <div>
+                                                    <span>SHARE YOUR EXPERIENCE</span>
+                                                    <h3>Write a Product Review</h3>
+                                                </div>
+                                                <FiSend />
+                                            </div>
 
-                            <ul>
+                                            <div className="review-form-grid">
+                                                <label>
+                                                    <span>Your Name</span>
+                                                    <div className="review-input-wrap">
+                                                        <FiUser />
+                                                        <input
+                                                            type="text"
+                                                            name="name"
+                                                            value={reviewForm.name}
+                                                            onChange={handleReviewInput}
+                                                            placeholder="Enter your name"
+                                                            required
+                                                        />
+                                                    </div>
+                                                </label>
 
-                                {product.points.map(point => (
+                                                <label>
+                                                    <span>Your Rating</span>
+                                                    <div className="rating-selector">
+                                                        {[1, 2, 3, 4, 5].map(star => (
+                                                            <button
+                                                                type="button"
+                                                                key={star}
+                                                                className={Number(reviewForm.rating) >= star ? "selected" : ""}
+                                                                onClick={() => setReviewForm(prev => ({ ...prev, rating: star }))}
+                                                                aria-label={`${star} star rating`}
+                                                            >
+                                                                <FiStar />
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </label>
+                                            </div>
 
-                                    <li key={point}>
-                                        {point}
-                                    </li>
+                                            <label className="review-comment-field">
+                                                <span>Your Review</span>
+                                                <textarea
+                                                    name="comment"
+                                                    value={reviewForm.comment}
+                                                    onChange={handleReviewInput}
+                                                    placeholder="Tell other customers about your experience..."
+                                                    rows="4"
+                                                    required
+                                                />
+                                            </label>
 
-                                ))}
+                                            <button type="submit" className="review-submit-btn">
+                                                <FiSend />
+                                                Submit Review
+                                            </button>
+                                        </form>
+                                    )}
 
-                            </ul>
+                                    <div className="reviews-list">
+                                        {userReviews.length > 0 ? (
+                                            userReviews.map(review => (
+                                                <article className="review-item" key={review.id}>
+                                                    <div className="review-avatar">
+                                                        <FiUser />
+                                                    </div>
+
+                                                    <div className="review-body">
+                                                        <div className="review-topline">
+                                                            <div>
+                                                                <strong>{review.name}</strong>
+                                                                <div className="review-stars">
+                                                                    {[1, 2, 3, 4, 5].map(star => (
+                                                                        <FiStar
+                                                                            key={star}
+                                                                            className={star <= Number(review.rating) ? "filled" : ""}
+                                                                        />
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                            <small>{review.date}</small>
+                                                        </div>
+
+                                                        <p>{review.comment}</p>
+                                                    </div>
+                                                </article>
+                                            ))
+                                        ) : (
+                                            <div className="empty-reviews">
+                                                <FiStar />
+                                                <h3>No reviews yet</h3>
+                                                <p>Be the first customer to share your experience.</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            ) : (
+                                <>
+                                    <p>
+                                        {tab === "Description"
+                                            ? product.desc
+                                            : tab === "Benefits"
+                                                ? "Traditionally used as part of balanced wellness routines. Follow the product label and your healthcare professional's advice where appropriate."
+                                                : tab === "Ingredients"
+                                                    ? "Single-herb formulation with carefully processed botanical ingredients."
+                                                    : tab === "How to Use"
+                                                        ? "Refer to the product label for recommended usage, storage and preparation instructions."
+                                                        : "For product-related questions, please contact our support team for assistance."
+                                        }
+                                    </p>
+
+                                    <ul>
+                                        {product.points.map(point => (
+                                            <li key={point}>{point}</li>
+                                        ))}
+                                    </ul>
+                                </>
+                            )}
 
                         </div>
 

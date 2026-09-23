@@ -961,7 +961,7 @@
     display: grid;
 
     grid-template-columns:
-        repeat(5, minmax(0, 1fr));
+        repeat(6, minmax(0, 1fr));
 
     background: #0b2117;
 
@@ -1508,7 +1508,7 @@
 
 
     .tab-nav button {
-        min-width: 115px;
+        min-width: 105px;
 
         white-space: nowrap;
 
@@ -1676,4 +1676,393 @@
         width: 100%;
     }
 
+}
+
+/* =========================================================
+   PRODUCT REVIEWS
+========================================================= */
+
+.product-reviews-panel {
+    width: 100%;
+    min-width: 0;
+}
+
+.reviews-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 18px 20px;
+    margin-bottom: 18px;
+    border: 1px solid rgba(216, 181, 106, 0.18);
+    border-radius: 12px;
+    background: linear-gradient(145deg, rgba(216, 181, 106, 0.06), rgba(8, 27, 19, 0.65));
+}
+
+.reviews-score {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.reviews-score strong {
+    font-family: "Playfair Display", Georgia, serif;
+    font-size: 34px;
+    line-height: 1;
+    color: #f3e3b2;
+}
+
+.reviews-score small {
+    color: #7f9087;
+    font-size: 11px;
+}
+
+.review-stars {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.review-stars svg {
+    width: 14px;
+    height: 14px;
+    color: #657168;
+    stroke-width: 1.8;
+}
+
+.review-stars svg.filled {
+    color: #e6bf62;
+    fill: #e6bf62;
+    stroke: #e6bf62;
+}
+
+.review-stars.large svg {
+    width: 19px;
+    height: 19px;
+}
+
+.review-write-btn,
+.review-submit-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: 1px solid var(--gold2);
+    background: var(--gold2);
+    color: #10170f;
+    border-radius: 8px;
+    min-height: 42px;
+    padding: 0 15px;
+    font-family: "Montserrat", sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: .2s ease;
+}
+
+.review-write-btn:hover,
+.review-submit-btn:hover {
+    background: #e5c77f;
+    border-color: #e5c77f;
+    transform: translateY(-1px);
+}
+
+.review-form {
+    margin-bottom: 20px;
+    padding: 20px;
+    border: 1px solid #234637;
+    border-radius: 12px;
+    background: #091f15;
+}
+
+.review-form-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    margin-bottom: 18px;
+}
+
+.review-form-head span {
+    color: var(--gold2);
+    font-size: 8px;
+    letter-spacing: 1.8px;
+}
+
+.review-form-head h3 {
+    margin: 5px 0 0;
+    color: #eef5f0;
+    font-family: "Playfair Display", Georgia, serif;
+    font-size: 22px;
+}
+
+.review-form-head > svg {
+    color: var(--gold2);
+    font-size: 23px;
+}
+
+.review-form-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 15px;
+}
+
+.review-form label {
+    display: block;
+}
+
+.review-form label > span {
+    display: block;
+    margin-bottom: 7px;
+    color: #b8c6be;
+    font-size: 10px;
+}
+
+.review-input-wrap {
+    position: relative;
+}
+
+.review-input-wrap > svg {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #7f9087;
+    font-size: 15px;
+    pointer-events: none;
+}
+
+.review-form input,
+.review-form textarea {
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid #27483a;
+    border-radius: 8px;
+    outline: none;
+    background: #06170f;
+    color: #fff;
+    font-family: "Montserrat", sans-serif;
+    font-size: 11px;
+    transition: .2s ease;
+}
+
+.review-form input {
+    height: 43px;
+    padding: 0 12px 0 37px;
+}
+
+.review-form textarea {
+    min-height: 100px;
+    resize: vertical;
+    padding: 11px 12px;
+    line-height: 1.6;
+}
+
+.review-form input:focus,
+.review-form textarea:focus {
+    border-color: var(--gold2);
+    box-shadow: 0 0 0 2px rgba(216, 181, 106, .08);
+}
+
+.review-form input::placeholder,
+.review-form textarea::placeholder {
+    color: #53675c;
+}
+
+.rating-selector {
+    height: 43px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 0 10px;
+    border: 1px solid #27483a;
+    border-radius: 8px;
+    background: #06170f;
+}
+
+.rating-selector button {
+    border: 0;
+    background: transparent;
+    color: #5c695f;
+    padding: 4px;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    transition: .15s ease;
+}
+
+.rating-selector button svg {
+    width: 19px;
+    height: 19px;
+}
+
+.rating-selector button.selected,
+.rating-selector button:hover {
+    color: #e6bf62;
+}
+
+.rating-selector button.selected svg {
+    fill: #e6bf62;
+    stroke: #e6bf62;
+}
+
+.review-comment-field {
+    margin-top: 15px;
+}
+
+.review-submit-btn {
+    margin-top: 14px;
+}
+
+.reviews-list {
+    display: flex;
+    flex-direction: column;
+    gap: 11px;
+}
+
+.review-item {
+    display: flex;
+    gap: 13px;
+    padding: 16px;
+    border: 1px solid #19392b;
+    border-radius: 11px;
+    background: rgba(8, 27, 19, .65);
+    transition: border-color .2s ease, transform .2s ease;
+}
+
+.review-item:hover {
+    border-color: rgba(216, 181, 106, .3);
+    transform: translateY(-1px);
+}
+
+.review-avatar {
+    width: 39px;
+    height: 39px;
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(216, 181, 106, .28);
+    border-radius: 50%;
+    color: var(--gold2);
+    background: rgba(216, 181, 106, .07);
+}
+
+.review-body {
+    min-width: 0;
+    flex: 1;
+}
+
+.review-topline {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 15px;
+}
+
+.review-topline strong {
+    display: block;
+    color: #e9f0eb;
+    font-size: 13px;
+    margin-bottom: 5px;
+}
+
+.review-topline small {
+    color: #687a70;
+    font-size: 9px;
+    white-space: nowrap;
+}
+
+.review-body p {
+    margin: 9px 0 0;
+    color: #9eada5;
+    font-size: 12px;
+    line-height: 1.65;
+}
+
+.empty-reviews {
+    text-align: center;
+    padding: 35px 20px;
+    border: 1px dashed #29493a;
+    border-radius: 11px;
+    color: #7d8e85;
+}
+
+.empty-reviews > svg {
+    color: var(--gold2);
+    width: 28px;
+    height: 28px;
+}
+
+.empty-reviews h3 {
+    margin: 8px 0 4px;
+    color: #dce6df;
+    font-size: 16px;
+}
+
+.empty-reviews p {
+    margin: 0;
+    color: #778980;
+    font-size: 11px;
+}
+
+/* =========================================================
+   REVIEW + PROMO DESKTOP HEIGHT FIX
+   The right promo must not stretch with the reviews list.
+========================================================= */
+
+.detail-tabs .tab-content {
+    align-items: start;
+}
+
+.detail-tabs .tab-copy {
+    min-width: 0;
+}
+
+.detail-tabs .side-promo {
+    align-self: start;
+    height: 200px;
+    min-height: 200px;
+    max-height: 200px;
+    box-sizing: border-box;
+}
+
+@media (max-width: 700px) {
+    .reviews-summary {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .review-form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .review-write-btn {
+        width: 100%;
+    }
+
+    .review-submit-btn {
+        width: 100%;
+    }
+
+    .detail-tabs .side-promo {
+        height: auto;
+        min-height: 160px;
+        max-height: none;
+    }
+}
+
+@media (max-width: 430px) {
+    .review-form {
+        padding: 15px;
+    }
+
+    .review-item {
+        padding: 13px;
+    }
+
+    .review-topline {
+        flex-direction: column;
+        gap: 6px;
+    }
 }
