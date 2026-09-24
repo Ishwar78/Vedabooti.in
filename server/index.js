@@ -13,6 +13,9 @@ import productRoute from "./route/productRoute.js";
 import authRoute from "./route/authRoute.js";
 import orderRoute from "./route/orderRoute.js";
 import couponRoute from "./route/couponRoute.js";
+import paymentRoute from "./route/paymentRoute.js";
+import supportRoute from "./route/supportRoute.js";
+import reviewRoute from "./route/reviewRoute.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -56,12 +59,31 @@ app.use("/orders", orderRoute);
 app.use("/api/coupons", couponRoute);
 app.use("/coupons", couponRoute);
 
+app.use("/api/payment", paymentRoute);
+app.use("/payment", paymentRoute);
+
+app.use("/api/support", supportRoute);
+app.use("/support", supportRoute);
+
+app.use("/api/reviews", reviewRoute);
+app.use("/reviews", reviewRoute);
+
 // Root health check
 app.get("/", (req, res) => {
   res.json({
     status: "ok",
     message: "Veda Booti Backend Server is running",
     timestamp: new Date().toISOString(),
+  });
+});
+
+// Global error handler with clean JSON output
+app.use((err, req, res, next) => {
+  console.error("[Server Global Error]:", err);
+  const status = err.status || err.statusCode || 500;
+  return res.status(status).json({
+    success: false,
+    message: err.message || "An unexpected server error occurred.",
   });
 });
 

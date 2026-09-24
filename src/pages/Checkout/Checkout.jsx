@@ -31,9 +31,30 @@ const DEFAULT_COUPONS = [
   }
 ];
 
+const loadRazorpayScript = () => {
+  return new Promise((resolve) => {
+    if (typeof window !== "undefined" && window.Razorpay) {
+      resolve(true);
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.async = true;
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+};
+
 export default function Checkout() {
   const nav = useNavigate();
   const location = useLocation();
+
+  const token =
+    typeof window !== "undefined"
+      ? localStorage.getItem("token") || localStorage.getItem("userToken")
+      : null;
+  const isLoggedIn = !!token;
 
   const [checkoutItems, setCheckoutItems] = useState([]);
   const [isDirect, setIsDirect] = useState(false);
@@ -48,7 +69,7 @@ export default function Checkout() {
     address: "",
     city: "",
     state: "",
-    paymentMethod: "cod"
+    paymentMethod: "online"
   });
 
   // Coupons State
@@ -195,18 +216,46 @@ export default function Checkout() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const finishOrderPlacement = (order) => {
+    // 1. Save order in localStorage vb_orders for immediate client-side availability
+    const existingOrders = JSON.parse(localStorage.getItem("vb_orders") || "[]");
+    existingOrders.unshift(order);
+    localStorage.setItem("vb_orders", JSON.stringify(existingOrders));
+
+    // 2. Clear appropriate storage
+    if (isDirect) {
+      clearDirectCheckoutItem();
+    } else {
+      clearCart();
+    }
+
+    setPlacingOrder(false);
+    nav("/thank-you", { state: { order } });
+  };
+
   const handlePlaceOrder = async (e) => {
     e.preventDefault();
+
+    if (!isLoggedIn) {
+      alert("Please log in or sign up to your account to place an order.");
+      nav("/login", { state: { from: "/checkout", redirectTo: "/checkout" } });
+      return;
+    }
 
     if (checkoutItems.length === 0) {
       alert("No items found to place order.");
       return;
     }
 
+    if (!formData.name.trim() || !formData.email.trim() || !formData.phone.trim() || !formData.address.trim() || !formData.pincode.trim()) {
+      alert("Please fill all required delivery address fields.");
+      return;
+    }
+
     setPlacingOrder(true);
     const orderNumber = `VB-${Date.now().toString().slice(-6)}`;
 
-    const newOrder = {
+    const baseOrder = {
       orderId: orderNumber,
       date: new Date().toLocaleDateString("en-IN", {
         day: "numeric",
@@ -227,34 +276,142 @@ export default function Checkout() {
       grandTotal,
       coupon: appliedCoupon ? appliedCoupon.code : null,
       customer: formData,
-      paymentMethod: formData.paymentMethod || "cod"
     };
 
-    try {
-      // 1. Post to backend order API
-      const res = await api.post("/api/orders", newOrder);
-      if (res?.success && res.order) {
-        newOrder._id = res.order._id;
-        newOrder.orderId = res.order.orderId || orderNumber;
+    // ================= ONLINE PAYMENT VIA RAZORPAY =================
+    if (formData.paymentMethod === "online") {
+      try {
+        const loaded = await loadRazorpayScript();
+        if (!loaded) {
+          alert("Razorpay payment gateway failed to load. Please check your internet connection.");
+          setPlacingOrder(false);
+          return;
+        }
+
+        // 1. Fetch Razorpay key & create order on backend
+        let keyId = "rzp_test_Sp7kyr6OgNH35p";
+        try {
+          const keyRes = await api.get("/api/payment/razorpay-key");
+          if (keyRes?.keyId) keyId = keyRes.keyId;
+        } catch {
+          // fallback to default keyId
+        }
+
+        const rzpOrderRes = await api.post("/api/payment/create-order", {
+          amount: grandTotal,
+          receipt: orderNumber,
+        });
+
+        if (!rzpOrderRes?.success || !rzpOrderRes?.order) {
+          alert(rzpOrderRes?.message || "Failed to initiate Razorpay online payment.");
+          setPlacingOrder(false);
+          return;
+        }
+
+        const rzpOrder = rzpOrderRes.order;
+
+        // 2. Open Razorpay Checkout modal
+        const options = {
+          key: keyId,
+          amount: rzpOrder.amount,
+          currency: rzpOrder.currency || "INR",
+          name: "Veda Booti Health Care",
+          description: `Order #${orderNumber}`,
+          image: "/assets/veda-booti-logo.png",
+          order_id: rzpOrder.id,
+          handler: async function (response) {
+            try {
+              // 3. Verify signature on backend
+              try {
+                await api.post("/api/payment/verify", {
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_signature: response.razorpay_signature,
+                });
+              } catch (verifyErr) {
+                console.warn("Signature verification note:", verifyErr.message);
+              }
+
+              // 4. Save order with status Paid
+              const finalOrder = {
+                ...baseOrder,
+                paymentMethod: "online",
+                paymentStatus: "Paid",
+                razorpayOrderId: response.razorpay_order_id,
+                razorpayPaymentId: response.razorpay_payment_id,
+              };
+
+              try {
+                const createRes = await api.post("/api/orders", finalOrder);
+                if (createRes?.success && createRes.order) {
+                  finalOrder._id = createRes.order._id;
+                  finalOrder.orderId = createRes.order.orderId || orderNumber;
+                }
+              } catch (saveErr) {
+                console.warn("Server order save note:", saveErr.message);
+              }
+
+              finishOrderPlacement(finalOrder);
+            } catch (err) {
+              console.error("Order post error:", err);
+              alert(err.message || "Failed to save order after payment.");
+              setPlacingOrder(false);
+            }
+          },
+          prefill: {
+            name: formData.name,
+            email: formData.email,
+            contact: formData.phone,
+          },
+          theme: {
+            color: "#0a2618",
+          },
+          modal: {
+            ondismiss: function () {
+              setPlacingOrder(false);
+            },
+          },
+        };
+
+        const rzp = new window.Razorpay(options);
+        rzp.on("payment.failed", function (resp) {
+          alert("Payment failed: " + (resp.error?.description || "Transaction declined"));
+          setPlacingOrder(false);
+        });
+        rzp.open();
+        return;
+      } catch (err) {
+        console.error("Razorpay error:", err);
+        alert(err.message || "Error processing payment.");
+        setPlacingOrder(false);
+        return;
       }
+    }
+
+    // ================= CASH ON DELIVERY (COD) =================
+    try {
+      const finalOrder = {
+        ...baseOrder,
+        paymentMethod: "cod",
+        paymentStatus: "Pending",
+      };
+
+      try {
+        const res = await api.post("/api/orders", finalOrder);
+        if (res?.success && res.order) {
+          finalOrder._id = res.order._id;
+          finalOrder.orderId = res.order.orderId || orderNumber;
+        }
+      } catch (saveErr) {
+        console.warn("Remote order save note:", saveErr.message);
+      }
+
+      finishOrderPlacement(finalOrder);
     } catch (err) {
-      console.warn("Could not save to remote order API, saved locally:", err.message);
+      console.error("COD order error:", err);
+      alert(err.message || "Failed to place order.");
+      setPlacingOrder(false);
     }
-
-    // 2. Save order in localStorage vb_orders for immediate client-side availability
-    const existingOrders = JSON.parse(localStorage.getItem("vb_orders") || "[]");
-    existingOrders.unshift(newOrder);
-    localStorage.setItem("vb_orders", JSON.stringify(existingOrders));
-
-    // 3. Clear appropriate storage
-    if (isDirect) {
-      clearDirectCheckoutItem();
-    } else {
-      clearCart();
-    }
-
-    setPlacingOrder(false);
-    nav("/thank-you", { state: { order: newOrder } });
   };
 
   return (
@@ -275,6 +432,22 @@ export default function Checkout() {
           <div className="checkout-grid">
             {/* Delivery & Payment Form */}
             <form className="checkout-form" onSubmit={handlePlaceOrder}>
+              {!isLoggedIn && (
+                <div className="checkout-login-alert">
+                  <FiLock />
+                  <div>
+                    <strong>Login Required: </strong>
+                    <span>
+                      Please{" "}
+                      <Link to="/login" state={{ from: "/checkout", redirectTo: "/checkout" }}>
+                        Log In / Sign Up
+                      </Link>{" "}
+                      with your email to complete your order.
+                    </span>
+                  </div>
+                </div>
+              )}
+
               <h2>Contact & Delivery Address</h2>
               <div className="form-grid">
                 <input
@@ -342,6 +515,18 @@ export default function Checkout() {
                   <input
                     type="radio"
                     name="paymentMethod"
+                    value="online"
+                    checked={formData.paymentMethod === "online"}
+                    onChange={handleInputChange}
+                  />
+                  <span>UPI / Cards / Net Banking</span>
+                  <small>Instant & 100% secure payment via Razorpay</small>
+                </label>
+
+                <label className="payment">
+                  <input
+                    type="radio"
+                    name="paymentMethod"
                     value="cod"
                     checked={formData.paymentMethod === "cod"}
                     onChange={handleInputChange}
@@ -349,22 +534,17 @@ export default function Checkout() {
                   <span>Cash on Delivery (COD)</span>
                   <small>Pay with cash or UPI upon delivery</small>
                 </label>
-
-                <label className="payment">
-                  <input
-                    type="radio"
-                    name="paymentMethod"
-                    value="online"
-                    checked={formData.paymentMethod === "online"}
-                    onChange={handleInputChange}
-                  />
-                  <span>UPI / Cards / Net Banking</span>
-                  <small>Instant & 100% secure payment</small>
-                </label>
               </div>
 
               <button className="btn place-order-btn" type="submit" disabled={placingOrder}>
-                <FiLock /> {placingOrder ? "Placing Order..." : `Place Order (₹${grandTotal})`}
+                <FiLock />{" "}
+                {!isLoggedIn
+                  ? "Login to Place Order"
+                  : placingOrder
+                  ? "Processing Order..."
+                  : formData.paymentMethod === "online"
+                  ? `Pay via Razorpay (₹${grandTotal})`
+                  : `Place Order COD (₹${grandTotal})`}
               </button>
             </form>
 

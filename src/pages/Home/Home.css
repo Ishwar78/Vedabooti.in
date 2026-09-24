@@ -1476,10 +1476,21 @@
 
 .featured-product-description {
     max-width: 610px;
-    margin: 0;
+    margin: 0 0 16px;
     color: #98a79e;
     font-size: 15px;
-    line-height: 1.75;
+    line-height: 1.7;
+}
+
+.featured-product-description p {
+    margin: 0 0 8px;
+    color: inherit;
+    font-size: inherit;
+    line-height: inherit;
+}
+
+.featured-product-description p:last-child {
+    margin-bottom: 0;
 }
 
 .featured-product-points {

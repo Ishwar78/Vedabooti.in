@@ -17,6 +17,7 @@
     "multer": "^2.4.0",
     "new": "^0.1.1",
     "nodemailer": "^10.0.10",
+    "razorpay": "^2.9.8",
     "react-helmet": "^6.1.0",
     "react-quill": "^2.0.0"
   },

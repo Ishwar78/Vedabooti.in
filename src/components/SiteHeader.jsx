@@ -62,7 +62,7 @@ export default function SiteHeader() {
             <Link to="/shop" onClick={() => setOpen(false)}>Shop</Link>
             <Link to="/categories" onClick={() => setOpen(false)}>Categories</Link>
             <Link to="/about" onClick={() => setOpen(false)}>About Us</Link>
-            <Link to="/support" onClick={() => setOpen(false)}>Contact</Link>
+            <Link to="/contact" onClick={() => setOpen(false)}>Contact</Link>
           </nav>
           <form className="search-box" onSubmit={submit}>
             <FiSearch />

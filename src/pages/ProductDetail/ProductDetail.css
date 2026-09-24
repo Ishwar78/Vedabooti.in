@@ -2061,3 +2061,52 @@
         gap: 6px;
     }
 }
+
+/* =========================================================
+   VERIFIED BUYER BADGES & ELIGIBILITY
+========================================================= */
+
+.verified-badge-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(16, 185, 129, 0.15);
+    color: #34d399;
+    border: 1px solid rgba(16, 185, 129, 0.35);
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 12px;
+    letter-spacing: 0.03em;
+}
+
+.verified-reviewed-box {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(16, 185, 129, 0.12);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    color: #34d399;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 8px 14px;
+    border-radius: 8px;
+}
+
+.review-eligibility-note {
+    background: rgba(216, 181, 106, 0.08);
+    border: 1px solid rgba(216, 181, 106, 0.22);
+    color: #c9dbd1;
+    font-size: 12px;
+    padding: 8px 14px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.review-eligibility-note svg {
+    color: var(--gold, #d8b56a);
+    font-size: 14px;
+    flex-shrink: 0;
+}

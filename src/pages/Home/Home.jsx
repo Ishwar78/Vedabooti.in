@@ -262,8 +262,25 @@ export default function Home() {
 
     const getFeaturedDescription = (product) =>
         product?.shortDescription ||
+        product?.shortDesc ||
+        product?.subtitle ||
         product?.description ||
+        product?.desc ||
         "A carefully crafted Ayurvedic wellness essential made with thoughtfully selected natural ingredients for your everyday self-care ritual.";
+
+    const renderCleanDescription = (content) => {
+        if (!content) return null;
+        const isHtml = /<[a-z][\s\S]*>/i.test(content);
+        if (isHtml) {
+            return (
+                <div
+                    className="featured-product-description"
+                    dangerouslySetInnerHTML={{ __html: content }}
+                />
+            );
+        }
+        return <p className="featured-product-description">{content}</p>;
+    };
 
     const handleFeaturedAddToCart = () => {
         if (!featuredProduct) return;
@@ -626,13 +643,10 @@ export default function Home() {
                             <span className="eyebrow">A Little Wellness, Every Day</span>
 
                             <h2>
-                                Discover Our{" "}
-                                <span>Featured Product</span>
+                                {featuredProduct?.name || "Natural Ayurvedic Wellness Essential"}
                             </h2>
 
-                            <h3>
-                                {featuredProduct?.name || "Natural Ayurvedic Wellness Essential"}
-                            </h3>
+                            {renderCleanDescription(getFeaturedDescription(featuredProduct))}
 
                             <div className="featured-product-price-row">
                                 <strong>₹{Number(getFeaturedPrice(featuredProduct)).toLocaleString("en-IN")}</strong>
@@ -642,10 +656,6 @@ export default function Home() {
                                     </del>
                                 )}
                             </div>
-
-                            <p className="featured-product-description">
-                                {getFeaturedDescription(featuredProduct)}
-                            </p>
 
                             <div className="featured-product-points">
                                 <span><FiFeather /> Natural Ingredients</span>

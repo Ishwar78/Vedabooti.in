@@ -33,6 +33,7 @@ import Orders from "./pages/Orders/Orders";
 import OrderDetails from "./pages/OrderDetails/OrderDetails";
 import Addresses from "./pages/Addresses/Addresses";
 import Support from "./pages/Support/Support";
+import Contact from "./pages/Contact/Contact";
 
 // ================================
 // ADMIN PAGES
@@ -54,6 +55,7 @@ import AdminReviews from "./pages/AdminReviews/AdminReviews";
 import AdminCreateReview from "./pages/AdminCreateReview/AdminCreateReview";
 import AdminVideos from "./pages/AdminVideos/AdminVideos";
 import AdminReturnRequests from "./pages/AdminReturnRequests/AdminReturnRequests";
+
 
 
 export default function App() {
@@ -179,7 +181,7 @@ export default function App() {
 
                 <Route
                     path="/contact"
-                    element={<Support />}
+                    element={<Contact />}
                 />
 
 

@@ -51,6 +51,36 @@
   grid-column: 1 / -1;
 }
 
+.checkout-login-alert {
+  background: rgba(216, 181, 106, 0.12);
+  border: 1px solid rgba(216, 181, 106, 0.4);
+  border-radius: 10px;
+  padding: 14px 18px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #edf4ef;
+  font-size: 13.5px;
+}
+
+.checkout-login-alert svg {
+  color: var(--gold2);
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.checkout-login-alert a {
+  color: var(--gold2);
+  font-weight: 700;
+  text-decoration: underline;
+  margin-left: 4px;
+}
+
+.checkout-login-alert a:hover {
+  color: #fff;
+}
+
 .payment-options {
   display: flex;
   flex-direction: column;

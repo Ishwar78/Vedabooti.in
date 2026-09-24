@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
   FiMail,
   FiUser,
@@ -17,6 +17,10 @@ import "../Login/Login.css";
 
 export default function SignUp() {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const queryRedirect = new URLSearchParams(location.search).get("redirect");
+  const redirectTo = location.state?.from || location.state?.redirectTo || queryRedirect || "/user";
 
   // Step 1: Fill details | Step 2: Verify OTP
   const [step, setStep] = useState(1);
@@ -141,7 +145,7 @@ export default function SignUp() {
 
       setSuccess("Account verified successfully! Redirecting...");
       setTimeout(() => {
-        navigate("/user");
+        navigate(redirectTo);
       }, 1200);
     } catch (err) {
       setError(err.message || "Verification failed. Please try again.");

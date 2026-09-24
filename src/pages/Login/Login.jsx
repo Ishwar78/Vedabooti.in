@@ -16,8 +16,9 @@ export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Check if redirect path was passed
-  const redirectTo = location.state?.from || "/user";
+  // Check if redirect path was passed via state or query param
+  const queryRedirect = new URLSearchParams(location.search).get("redirect");
+  const redirectTo = location.state?.from || location.state?.redirectTo || queryRedirect || "/user";
 
   // Step 1: Enter Email | Step 2: Enter OTP
   const [step, setStep] = useState(1);

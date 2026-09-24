@@ -100,88 +100,128 @@ export default function ProductDetail() {
     const [wished, setWished] = useState(false);
     const [addedToCart, setAddedToCart] = useState(false);
     const [userReviews, setUserReviews] = useState([]);
+    const [reviewStats, setReviewStats] = useState({ averageRating: "5.0", count: 0 });
+    const [reviewEligibility, setReviewEligibility] = useState({
+        canReview: false,
+        reason: "checking",
+        alreadyReviewed: false,
+        user: null,
+    });
+    const [loadingReviews, setLoadingReviews] = useState(false);
+    const [submittingReview, setSubmittingReview] = useState(false);
     const [showReviewForm, setShowReviewForm] = useState(false);
     const [reviewForm, setReviewForm] = useState({
         name: "",
         rating: 5,
-        comment: ""
+        comment: "",
     });
 
-    const reviewStorageKey = `vedaBootiReviews_${product.id || product.slug}`;
-
-    useEffect(() => {
-        const savedReviews = localStorage.getItem(reviewStorageKey);
-
-        if (savedReviews) {
-            try {
-                setUserReviews(JSON.parse(savedReviews));
-            } catch {
-                setUserReviews([]);
+    // Fetch approved product reviews from backend
+    const fetchProductReviews = async () => {
+        const prodId = product.id || product._id || product.slug;
+        if (!prodId) return;
+        setLoadingReviews(true);
+        try {
+            const res = await api.get(
+                `/api/reviews/product/${prodId}?slug=${product.slug || ""}&id=${product._id || product.id || ""}`
+            );
+            if (res?.success) {
+                setUserReviews(res.reviews || []);
+                setReviewStats({
+                    averageRating: res.averageRating || "5.0",
+                    count: res.count || 0,
+                });
             }
-        } else {
-            setUserReviews([
-                {
-                    id: "demo-1",
-                    name: "Priya Sharma",
-                    rating: 5,
-                    comment: "Really good quality product. Packaging was neat and the product feels genuine.",
-                    date: "18 Sep 2026"
-                },
-                {
-                    id: "demo-2",
-                    name: "Rahul Verma",
-                    rating: 4,
-                    comment: "Good experience overall. Product quality is nice and delivery was smooth.",
-                    date: "12 Sep 2026"
-                },
-                {
-                    id: "demo-3",
-                    name: "Neha Singh",
-                    rating: 5,
-                    comment: "I liked the product and would definitely consider ordering again.",
-                    date: "06 Sep 2026"
-                }
-            ]);
+        } catch (err) {
+            console.warn("Could not fetch product reviews:", err.message);
+        } finally {
+            setLoadingReviews(false);
         }
-    }, [reviewStorageKey]);
-
-    const handleReviewInput = (e) => {
-        const { name, value } = e.target;
-        setReviewForm(prev => ({ ...prev, [name]: value }));
     };
 
-    const handleReviewSubmit = (e) => {
-        e.preventDefault();
-
-        if (!reviewForm.name.trim() || !reviewForm.comment.trim()) {
-            alert("Please enter your name and review.");
+    // Check if logged-in customer is a verified buyer of this product
+    const checkReviewEligibility = async () => {
+        const token = localStorage.getItem("token") || localStorage.getItem("userToken");
+        if (!token) {
+            setReviewEligibility({
+                canReview: false,
+                reason: "login_required",
+                alreadyReviewed: false,
+                user: null,
+            });
             return;
         }
 
-        const newReview = {
-            id: Date.now(),
-            name: reviewForm.name.trim(),
-            rating: Number(reviewForm.rating),
-            comment: reviewForm.comment.trim(),
-            date: new Date().toLocaleDateString("en-IN", {
-                day: "2-digit",
-                month: "short",
-                year: "numeric"
-            })
-        };
+        const prodId = product.id || product._id || product.slug;
+        if (!prodId) return;
 
-        const updatedReviews = [newReview, ...userReviews];
-
-        setUserReviews(updatedReviews);
-        localStorage.setItem(reviewStorageKey, JSON.stringify(updatedReviews));
-        setReviewForm({ name: "", rating: 5, comment: "" });
-        setShowReviewForm(false);
-        setTab("Reviews");
+        try {
+            const res = await api.get(
+                `/api/reviews/can-review/${prodId}?slug=${product.slug || ""}&id=${product._id || product.id || ""}&name=${encodeURIComponent(product.name || "")}`
+            );
+            if (res) {
+                setReviewEligibility(res);
+                if (res.user?.name) {
+                    setReviewForm((prev) => ({
+                        ...prev,
+                        name: prev.name || res.user.name,
+                    }));
+                }
+            }
+        } catch (err) {
+            console.warn("Eligibility check failed:", err.message);
+        }
     };
 
-    const averageUserRating = userReviews.length
-        ? (userReviews.reduce((sum, review) => sum + Number(review.rating || 0), 0) / userReviews.length).toFixed(1)
-        : Number(product.rating || 0).toFixed(1);
+    useEffect(() => {
+        fetchProductReviews();
+        checkReviewEligibility();
+    }, [slug, dbProduct]);
+
+    const handleReviewInput = (e) => {
+        const { name, value } = e.target;
+        setReviewForm((prev) => ({ ...prev, [name]: value }));
+    };
+
+    const handleReviewSubmit = async (e) => {
+        e.preventDefault();
+
+        if (!reviewForm.comment.trim()) {
+            alert("Please enter your review comment.");
+            return;
+        }
+
+        setSubmittingReview(true);
+        try {
+            const res = await api.post("/api/reviews", {
+                productId: String(product.id || product._id || product.slug),
+                productSlug: product.slug || "",
+                productName: product.name || "",
+                productImage: product.img || (product.images && product.images[0]) || "",
+                rating: Number(reviewForm.rating),
+                comment: reviewForm.comment.trim(),
+                name: reviewForm.name.trim() || reviewEligibility.user?.name || "Customer",
+            });
+
+            if (res?.success) {
+                alert(res.message || "Thank you! Your verified review has been submitted.");
+                setReviewForm({ name: reviewEligibility.user?.name || "", rating: 5, comment: "" });
+                setShowReviewForm(false);
+                setReviewEligibility((prev) => ({ ...prev, alreadyReviewed: true }));
+                fetchProductReviews();
+            } else {
+                alert(res?.message || "Failed to submit review.");
+            }
+        } catch (err) {
+            alert(err.message || "Only verified buyers who purchased this product can leave a review.");
+        } finally {
+            setSubmittingReview(false);
+        }
+    };
+
+    const averageUserRating = reviewStats.count > 0
+        ? reviewStats.averageRating
+        : Number(product.rating || 5.0).toFixed(1);
 
     useEffect(() => {
         const prodId = product._id || product.id || product.slug;
@@ -384,7 +424,7 @@ export default function ProductDetail() {
                             </b>
 
                             <span>
-                                ({product.reviews} reviews)
+                                {/* ({product.reviews} reviews) */}
                             </span>
 
                         </div>
@@ -678,32 +718,59 @@ export default function ProductDetail() {
                                                     />
                                                 ))}
                                             </div>
-                                            <small>{userReviews.length} customer reviews</small>
+                                            <small>{userReviews.length} verified customer reviews</small>
                                         </div>
 
-                                        <button
-                                            type="button"
-                                            className="review-write-btn"
-                                            onClick={() => setShowReviewForm(prev => !prev)}
-                                        >
-                                            <FiStar />
-                                            {showReviewForm ? "Close Review Form" : "Write a Review"}
-                                        </button>
+                                        {reviewEligibility.canReview ? (
+                                            reviewEligibility.alreadyReviewed ? (
+                                                <div className="verified-reviewed-box">
+                                                    <FiCheck className="check-icon" />
+                                                    <span>You have reviewed this product</span>
+                                                </div>
+                                            ) : (
+                                                <button
+                                                    type="button"
+                                                    className="review-write-btn"
+                                                    onClick={() => setShowReviewForm(prev => !prev)}
+                                                >
+                                                    <FiStar />
+                                                    {showReviewForm ? "Close Review Form" : "Write a Verified Review"}
+                                                </button>
+                                            )
+                                        ) : (
+                                            <div className="review-eligibility-note">
+                                                {reviewEligibility.reason === "login_required" ? (
+                                                    <span>
+                                                        <FiShield /> Purchased this product?{" "}
+                                                        <Link to="/login" state={{ from: location.pathname }} style={{ color: "#d8b56a", textDecoration: "underline" }}>
+                                                            Log in
+                                                        </Link>{" "}
+                                                        to leave a verified review.
+                                                    </span>
+                                                ) : (
+                                                    <span>
+                                                        <FiShield /> Verified Buyer Reviews Only: Only customers who bought this product can leave a review.
+                                                    </span>
+                                                )}
+                                            </div>
+                                        )}
                                     </div>
 
                                     {showReviewForm && (
                                         <form className="review-form" onSubmit={handleReviewSubmit}>
                                             <div className="review-form-head">
                                                 <div>
-                                                    <span>SHARE YOUR EXPERIENCE</span>
-                                                    <h3>Write a Product Review</h3>
+                                                    <span style={{ color: "#d8b56a", fontSize: "11px", fontWeight: "700", letterSpacing: "1px" }}>
+                                                        <FiCheck /> VERIFIED BUYER FEEDBACK
+                                                    </span>
+                                                    <h3 style={{ margin: "4px 0 0" }}>Write a Product Review</h3>
                                                 </div>
                                                 <FiSend />
                                             </div>
 
                                             <div className="review-form-grid">
                                                 <label>
-                                                    <span>Your Name</span>
+                                                    <span>Your Name (Verified Buyer)</span>
                                                     <div className="review-input-wrap">
                                                         <FiUser />
                                                         <input
@@ -711,7 +778,7 @@ export default function ProductDetail() {
                                                             name="name"
                                                             value={reviewForm.name}
                                                             onChange={handleReviewInput}
-                                                            placeholder="Enter your name"
+                                                            placeholder="Your Name"
                                                             required
                                                         />
                                                     </div>
@@ -736,28 +803,41 @@ export default function ProductDetail() {
                                             </div>
 
                                             <label className="review-comment-field">
-                                                <span>Your Review</span>
+                                                <span>Your Review Experience *</span>
                                                 <textarea
                                                     name="comment"
                                                     value={reviewForm.comment}
                                                     onChange={handleReviewInput}
-                                                    placeholder="Tell other customers about your experience..."
+                                                    placeholder="Share your authentic experience with other customers..."
                                                     rows="4"
                                                     required
                                                 />
                                             </label>
 
-                                            <button type="submit" className="review-submit-btn">
-                                                <FiSend />
-                                                Submit Review
+                                            <button
+                                                type="submit"
+                                                className="review-submit-btn"
+                                                disabled={submittingReview}
+                                            >
+                                                {submittingReview ? (
+                                                    "Submitting Review..."
+                                                ) : (
+                                                    <>
+                                                        <FiSend /> Submit Verified Review
+                                                    </>
+                                                )}
                                             </button>
                                         </form>
                                     )}
 
                                     <div className="reviews-list">
-                                        {userReviews.length > 0 ? (
-                                            userReviews.map(review => (
-                                                <article className="review-item" key={review.id}>
+                                        {loadingReviews ? (
+                                            <div className="empty-reviews">
+                                                <p>Loading verified reviews...</p>
+                                            </div>
+                                        ) : userReviews.length > 0 ? (
+                                            userReviews.map((review, idx) => (
+                                                <article className="review-item" key={review._id || review.id || idx}>
                                                     <div className="review-avatar">
                                                         <FiUser />
                                                     </div>
@@ -765,7 +845,14 @@ export default function ProductDetail() {
                                                     <div className="review-body">
                                                         <div className="review-topline">
                                                             <div>
-                                                                <strong>{review.name}</strong>
+                                                                <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+                                                                    <strong>{review.userName || review.name}</strong>
+                                                                    {review.isVerifiedBuyer !== false && (
+                                                                        <span className="verified-badge-pill">
+                                                                            <FiCheck /> Verified Buyer
+                                                                        </span>
+                                                                    )}
+                                                                </div>
                                                                 <div className="review-stars">
                                                                     {[1, 2, 3, 4, 5].map(star => (
                                                                         <FiStar
@@ -775,7 +862,15 @@ export default function ProductDetail() {
                                                                     ))}
                                                                 </div>
                                                             </div>
-                                                            <small>{review.date}</small>
+                                                            <small>
+                                                                {review.createdAt
+                                                                    ? new Date(review.createdAt).toLocaleDateString("en-IN", {
+                                                                          day: "2-digit",
+                                                                          month: "short",
+                                                                          year: "numeric"
+                                                                      })
+                                                                    : review.date || "Recent"}
+                                                            </small>
                                                         </div>
 
                                                         <p>{review.comment}</p>
@@ -785,8 +880,8 @@ export default function ProductDetail() {
                                         ) : (
                                             <div className="empty-reviews">
                                                 <FiStar />
-                                                <h3>No reviews yet</h3>
-                                                <p>Be the first customer to share your experience.</p>
+                                                <h3>No verified reviews yet</h3>
+                                                <p>Be the first verified customer to share your experience with this product.</p>
                                             </div>
                                         )}
                                     </div>

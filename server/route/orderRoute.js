@@ -35,15 +35,21 @@ router.post("/", async (req, res) => {
     } = req.body;
 
     const authUser = extractUser(req);
+    if (!authUser) {
+      return res.status(401).json({
+        success: false,
+        message: "Please login to your account to place an order.",
+      });
+    }
 
     const generatedId = orderId || `VB-${Date.now().toString().slice(-6)}`;
 
     const newOrder = new Order({
       orderId: generatedId,
-      user: authUser ? authUser.id : null,
+      user: authUser.id,
       customer: {
         name: customer?.name || "Customer",
-        email: customer?.email || (authUser ? authUser.email : ""),
+        email: customer?.email || authUser.email,
         phone: customer?.phone || "",
         address: customer?.address || "",
         city: customer?.city || "",
@@ -58,6 +64,9 @@ router.post("/", async (req, res) => {
       coupon: coupon || null,
       status: "Confirmed",
       paymentMethod: paymentMethod || "cod",
+      paymentStatus: req.body.paymentStatus || (paymentMethod === "online" ? "Paid" : "Pending"),
+      razorpayOrderId: req.body.razorpayOrderId || null,
+      razorpayPaymentId: req.body.razorpayPaymentId || null,
     });
 
     const saved = await newOrder.save();
@@ -154,7 +163,7 @@ router.get("/", async (req, res) => {
 /* =========================================================
    4. ADMIN: UPDATE ORDER STATUS
 ========================================================= */
-router.patch("/:id/status", async (req, res) => {
+const updateOrderStatusHandler = async (req, res) => {
   try {
     const { status } = req.body;
     const order = await Order.findById(req.params.id);
@@ -173,6 +182,10 @@ router.patch("/:id/status", async (req, res) => {
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }
-});
+};
+
+router.patch("/:id/status", updateOrderStatusHandler);
+router.put("/:id/status", updateOrderStatusHandler);
+router.post("/:id/status", updateOrderStatusHandler);
 
 export default router;
