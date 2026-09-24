@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   FiGrid,
@@ -15,6 +15,8 @@ import {
 
 import SiteHeader from "./SiteHeader";
 import SiteFooter from "./SiteFooter";
+import api from "../lib/api";
+import { syncCartToBackend, dispatchStorageUpdate } from "../lib/cartWishlist";
 import "./UserShell.css";
 
 const USER_NAV_ITEMS = [
@@ -28,9 +30,31 @@ const USER_NAV_ITEMS = [
 
 export default function UserShell({ children }) {
   const [mobileOpen, setMobileOpen] = useState(false);
-
   const location = useLocation();
   const navigate = useNavigate();
+
+  const [user, setUser] = useState(() => {
+    try {
+      const raw = localStorage.getItem("user");
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  useEffect(() => {
+    const token = localStorage.getItem("token") || localStorage.getItem("userToken");
+    if (!token) return;
+
+    api.get("/api/auth/me")
+      .then((res) => {
+        if (res?.success && res.user) {
+          setUser(res.user);
+          localStorage.setItem("user", JSON.stringify(res.user));
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const isCurrentActive = (path) => {
     if (
@@ -44,16 +68,26 @@ export default function UserShell({ children }) {
   };
 
   // ================= LOGOUT =================
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    // Sync cart to backend before logout so it is preserved in user's account
+    try {
+      await syncCartToBackend();
+    } catch {}
+
     // Remove common login/session data
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     localStorage.removeItem("userToken");
     localStorage.removeItem("authToken");
     localStorage.removeItem("isLoggedIn");
+    localStorage.removeItem("vb_cart"); // clear local cart on logout
 
     // Close mobile sidebar
     setMobileOpen(false);
+
+    // Notify other components
+    dispatchStorageUpdate();
+    window.dispatchEvent(new Event("storage"));
 
     // Redirect to login
     navigate("/login");
@@ -81,8 +115,8 @@ export default function UserShell({ children }) {
             </div>
 
             <div className="user-sidebar-profile">
-              <b>Wellness Lover</b>
-              <small>customer@example.com</small>
+              <b>{user?.name || "Customer"}</b>
+              <small>{user?.email || "My Account"}</small>
             </div>
 
             <button

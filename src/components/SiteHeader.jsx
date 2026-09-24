@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { FiSearch, FiUser, FiHeart, FiShoppingBag, FiMenu, FiX } from "react-icons/fi";
-import { getCartCount, getWishlistCount, subscribeToStorage } from "../lib/cartWishlist";
+import { getCartCount, getWishlistCount, subscribeToStorage, restoreUserCartFromBackend } from "../lib/cartWishlist";
 import "./SiteHeader.css";
 
 export default function SiteHeader() {
@@ -9,15 +9,32 @@ export default function SiteHeader() {
   const [q, setQ] = useState("");
   const [cartCount, setCartCount] = useState(0);
   const [wishlistCount, setWishlistCount] = useState(0);
+  const [currentUser, setCurrentUser] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
+    // If user is logged in, ensure cart is restored from database
+    if (localStorage.getItem("token") || localStorage.getItem("userToken")) {
+      restoreUserCartFromBackend();
+    }
+
     const updateCounts = () => {
       setCartCount(getCartCount());
       setWishlistCount(getWishlistCount());
+      try {
+        const u = localStorage.getItem("user");
+        setCurrentUser(u ? JSON.parse(u) : null);
+      } catch {
+        setCurrentUser(null);
+      }
     };
     updateCounts();
-    return subscribeToStorage(updateCounts);
+    window.addEventListener("storage", updateCounts);
+    const unsub = subscribeToStorage(updateCounts);
+    return () => {
+      window.removeEventListener("storage", updateCounts);
+      if (unsub) unsub();
+    };
   }, []);
 
   const submit = (e) => {
@@ -56,8 +73,28 @@ export default function SiteHeader() {
             />
           </form>
           <div className="nav-actions">
-            <Link to="/user" aria-label="Account" title="My Account">
+            <Link
+              to={currentUser ? "/user" : "/login"}
+              aria-label={currentUser ? "My Account" : "Sign In"}
+              title={currentUser ? `Account: ${currentUser.name || currentUser.email}` : "Sign In / Register"}
+              style={{ position: "relative" }}
+            >
               <FiUser />
+              {currentUser && (
+                <span
+                  style={{
+                    position: "absolute",
+                    top: "3px",
+                    right: "3px",
+                    width: "8px",
+                    height: "8px",
+                    backgroundColor: "#22c55e",
+                    borderRadius: "50%",
+                    border: "2px solid #061810",
+                  }}
+                  title="Signed In"
+                />
+              )}
             </Link>
             <Link to="/wishlist" aria-label="Wishlist" title="Wishlist">
               <FiHeart />

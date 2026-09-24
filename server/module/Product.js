@@ -105,6 +105,10 @@ const productSchema = new mongoose.Schema(
       type: String,
       default: "Gram",
     },
+    weight: {
+      type: String,
+      default: "",
+    },
     metaTitle: {
       type: String,
       default: "",

@@ -121,7 +121,7 @@ export default function SiteFooter() {
           <div className="socials">
 
             <a
-              href="#"
+              href="https://www.facebook.com/vedabooti"
               aria-label="Facebook"
               className="social-icon"
             >
@@ -129,7 +129,7 @@ export default function SiteFooter() {
             </a>
 
             <a
-              href="#"
+              href="https://www.instagram.com/vedabooti/"
               aria-label="Instagram"
               className="social-icon"
             >
@@ -137,7 +137,7 @@ export default function SiteFooter() {
             </a>
 
             <a
-              href="#"
+              href="https://www.youtube.com/@VedaBooti"
               aria-label="YouTube"
               className="social-icon"
             >
@@ -145,7 +145,7 @@ export default function SiteFooter() {
             </a>
 
             <a
-              href="mailto:support@vedabooti.com"
+              href="mailto:vedabooti1@gmail.com"
               aria-label="Email"
               className="social-icon"
             >
@@ -176,7 +176,7 @@ export default function SiteFooter() {
           </em>
 
           <span className="quote-leaf">
-            ✦
+            ✦ ✦ ✦ ✦
           </span>
 
         </div>

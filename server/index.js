@@ -10,6 +10,9 @@ import categoryRoute from "./route/categoryRoute.js";
 import contactRoute from "./route/contactRoute.js";
 import videoRoute from "./route/videoRoute.js";
 import productRoute from "./route/productRoute.js";
+import authRoute from "./route/authRoute.js";
+import orderRoute from "./route/orderRoute.js";
+import couponRoute from "./route/couponRoute.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -29,6 +32,9 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Routes
 // Mount both /api/... and /... for maximum flexibility with frontend requests
+app.use("/api/auth", authRoute);
+app.use("/auth", authRoute);
+
 app.use("/api/admin", adminRoute);
 app.use("/admin", adminRoute);
 
@@ -43,6 +49,12 @@ app.use("/videos", videoRoute);
 
 app.use("/api/products", productRoute);
 app.use("/products", productRoute);
+
+app.use("/api/orders", orderRoute);
+app.use("/orders", orderRoute);
+
+app.use("/api/coupons", couponRoute);
+app.use("/coupons", couponRoute);
 
 // Root health check
 app.get("/", (req, res) => {

@@ -510,6 +510,7 @@ router.post("/", (req, res, next) => {
       short,
       stock,
       unit,
+      weight,
       status,
       metaTitle,
       metaDescription,
@@ -565,12 +566,13 @@ router.post("/", (req, res, next) => {
       desc: description ? description.trim() : shortDescription ? shortDescription.trim() : "",
       tag: tag || "Bestseller",
       short: short || category.trim(),
-      stock: stock ? Number(stock) : 100,
+      stock: stock !== undefined && stock !== "" ? Number(stock) : 100,
       unit: unit || "Gram",
+      weight: weight || "",
       status: status || "Active",
       images: allImages.length > 0 ? allImages : ["/assets/product1.jpeg"],
       image: allImages.length > 0 ? allImages[0] : "/assets/product1.jpeg",
-      points: points.length > 0 ? points : ["Pure herbal formulation", "100% natural ingredients", "Made in India"],
+      points: points.length > 0 ? points : [],
       ingredients,
       howToUse: req.body.howToUse || "",
       faq: parsedFaq,
@@ -647,6 +649,7 @@ router.put("/:id", (req, res, next) => {
     if (short !== undefined) product.short = short;
     if (stock !== undefined) product.stock = Number(stock);
     if (unit !== undefined) product.unit = unit;
+    if (req.body.weight !== undefined) product.weight = req.body.weight;
     if (status !== undefined) product.status = status;
     if (metaTitle !== undefined) product.metaTitle = metaTitle;
     if (metaDescription !== undefined) product.metaDescription = metaDescription;

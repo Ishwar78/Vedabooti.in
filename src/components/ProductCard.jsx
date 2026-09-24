@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { FiHeart, FiShoppingBag, FiZap } from "react-icons/fi";
+import { FiHeart, FiShoppingBag, FiZap, FiCheck } from "react-icons/fi";
 import {
   addToCart,
   isInWishlist,
@@ -14,7 +14,8 @@ import "./ProductCard.css";
 export default function ProductCard({ product }) {
   const nav = useNavigate();
   const [wished, setWished] = useState(false);
-  const productId = product._id || product.id;
+  const [addedToCart, setAddedToCart] = useState(false);
+  const productId = product._id || product.id || product.slug;
 
   useEffect(() => {
     setWished(isInWishlist(productId));
@@ -30,7 +31,10 @@ export default function ProductCard({ product }) {
   const handleAddToCart = (e) => {
     e.stopPropagation();
     addToCart(product, 1);
-    nav("/cart");
+    setAddedToCart(true);
+    setTimeout(() => {
+      setAddedToCart(false);
+    }, 1800);
   };
 
   const handleBuyNow = (e) => {
@@ -125,12 +129,21 @@ export default function ProductCard({ product }) {
         <div className="pc-actions">
           <button
             type="button"
-            className="pc-btn add-btn"
+            className={`pc-btn add-btn ${addedToCart ? "added" : ""}`}
             onClick={handleAddToCart}
-            title="Add to Cart"
+            title={addedToCart ? "Added to Cart!" : "Add to Cart"}
+            style={
+              addedToCart
+                ? {
+                    background: "#166534",
+                    borderColor: "#22c55e",
+                    color: "#86efac",
+                  }
+                : {}
+            }
           >
-            <FiShoppingBag />
-            <span>Add to Cart</span>
+            {addedToCart ? <FiCheck /> : <FiShoppingBag />}
+            <span>{addedToCart ? "Added!" : "Add to Cart"}</span>
           </button>
           <button
             type="button"

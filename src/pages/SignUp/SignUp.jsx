@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   FiMail,
+  FiUser,
+  FiPhone,
+  FiKey,
   FiArrowRight,
   FiCheckCircle,
   FiAlertCircle,
@@ -10,27 +13,27 @@ import {
 } from "react-icons/fi";
 import api from "../../lib/api";
 import { mergeAndRestoreUserCart } from "../../lib/cartWishlist";
-import "./Login.css";
+import "../Login/Login.css";
 
-export default function Login() {
+export default function SignUp() {
   const navigate = useNavigate();
-  const location = useLocation();
 
-  // Check if redirect path was passed
-  const redirectTo = location.state?.from || "/user";
-
-  // Step 1: Enter Email | Step 2: Enter OTP
+  // Step 1: Fill details | Step 2: Verify OTP
   const [step, setStep] = useState(1);
 
+  // Form states
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
 
+  // UI status
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [countdown, setCountdown] = useState(0);
 
-  // Countdown timer for resend OTP
+  // Countdown timer effect for resend OTP
   useEffect(() => {
     let timer = null;
     if (countdown > 0) {
@@ -43,11 +46,16 @@ export default function Login() {
     };
   }, [countdown]);
 
-  // ================= STEP 1: SEND LOGIN OTP =================
+  // ================= STEP 1: SEND SIGNUP OTP =================
   const handleSendOtp = async (e) => {
     e.preventDefault();
     setError("");
     setSuccess("");
+
+    if (!name.trim()) {
+      setError("Please enter your full name.");
+      return;
+    }
 
     if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
       setError("Please enter a valid email address.");
@@ -56,21 +64,23 @@ export default function Login() {
 
     setLoading(true);
     try {
-      const res = await api.post("/api/auth/send-login-otp", {
+      const res = await api.post("/api/auth/send-signup-otp", {
+        name: name.trim(),
         email: email.trim().toLowerCase(),
+        phone: phone.trim(),
       });
 
-      setSuccess(res.message || `Login code sent to ${email.trim()}.`);
+      setSuccess(res.message || `OTP sent to ${email.trim()}.`);
       setStep(2);
       setCountdown(60);
     } catch (err) {
-      setError(err.message || "Failed to send login code. Please try again.");
+      setError(err.message || "Failed to send verification OTP.");
     } finally {
       setLoading(false);
     }
   };
 
-  // ================= RESEND LOGIN OTP =================
+  // ================= RESEND OTP =================
   const handleResendOtp = async () => {
     if (countdown > 0 || loading) return;
     setError("");
@@ -78,33 +88,35 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const res = await api.post("/api/auth/send-login-otp", {
+      const res = await api.post("/api/auth/send-signup-otp", {
+        name: name.trim(),
         email: email.trim().toLowerCase(),
+        phone: phone.trim(),
       });
 
-      setSuccess(res.message || "A fresh login code has been sent to your email.");
+      setSuccess(res.message || "A new OTP has been sent to your email.");
       setCountdown(60);
     } catch (err) {
-      setError(err.message || "Failed to resend code.");
+      setError(err.message || "Failed to resend OTP.");
     } finally {
       setLoading(false);
     }
   };
 
-  // ================= STEP 2: VERIFY LOGIN OTP =================
+  // ================= STEP 2: VERIFY OTP & REGISTER =================
   const handleVerifyOtp = async (e) => {
     e.preventDefault();
     setError("");
     setSuccess("");
 
     if (!otp.trim() || otp.trim().length !== 6) {
-      setError("Please enter the complete 6-digit OTP code.");
+      setError("Please enter the complete 6-digit verification code.");
       return;
     }
 
     setLoading(true);
     try {
-      const res = await api.post("/api/auth/verify-login-otp", {
+      const res = await api.post("/api/auth/verify-signup-otp", {
         email: email.trim().toLowerCase(),
         otp: otp.trim(),
       });
@@ -119,20 +131,20 @@ export default function Login() {
         localStorage.setItem("isLoggedIn", "true");
       }
 
-      // Restore saved user cart from database
+      // Restore saved user cart if any exists
       if (res.cart) {
         mergeAndRestoreUserCart(res.cart);
       }
 
-      // Notify other components via storage event
+      // Notify other components (Header, Shell) via storage event
       window.dispatchEvent(new Event("storage"));
 
-      setSuccess("Login successful! Redirecting to your account...");
+      setSuccess("Account verified successfully! Redirecting...");
       setTimeout(() => {
-        navigate(redirectTo);
-      }, 1000);
+        navigate("/user");
+      }, 1200);
     } catch (err) {
-      setError(err.message || "Invalid OTP code. Please try again.");
+      setError(err.message || "Verification failed. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -148,16 +160,16 @@ export default function Login() {
         <span>Goodness from Nature.</span>
       </div>
 
-      {/* ================= LOGIN CARD ================= */}
+      {/* ================= SIGN UP CARD ================= */}
       <div className="auth-card">
         {/* Navigation Tabs */}
         <div className="auth-tabs">
-          <button type="button" className="auth-tab active">
+          <Link to="/login" className="auth-tab">
             Sign In
-          </button>
-          <Link to="/signup" className="auth-tab">
-            Create Account
           </Link>
+          <button type="button" className="auth-tab active">
+            Create Account
+          </button>
         </div>
 
         {/* Error Alert */}
@@ -166,13 +178,13 @@ export default function Login() {
             <FiAlertCircle size={18} style={{ flexShrink: 0 }} />
             <div>
               <span>{error}</span>
-              {(error.toLowerCase().includes("not registered") || error.toLowerCase().includes("sign up")) && (
+              {error.toLowerCase().includes("already registered") && (
                 <div style={{ marginTop: "4px" }}>
                   <Link
-                    to="/signup"
+                    to="/login"
                     style={{ color: "#ffd67a", fontWeight: "600", textDecoration: "underline" }}
                   >
-                    Click here to Sign Up
+                    Click here to Login
                   </Link>
                 </div>
               )}
@@ -188,16 +200,31 @@ export default function Login() {
           </div>
         )}
 
-        {/* ================= STEP 1: ENTER REGISTERED EMAIL ================= */}
+        {/* ================= STEP 1: USER DETAILS FORM ================= */}
         {step === 1 && (
           <form onSubmit={handleSendOtp}>
-            <span className="eyebrow">Welcome Back</span>
-            <h1>Sign In</h1>
-            <p>Access your orders, wishlist, and profile with secure email OTP login.</p>
+            <span className="eyebrow">Join Veda Booti</span>
+            <h1>Register</h1>
+            <p>Enter your details to receive an OTP verification code on your email.</p>
+
+            {/* FULL NAME */}
+            <label className="auth-field">
+              <span>Full Name *</span>
+              <div className="auth-input-wrapper">
+                <FiUser className="auth-input-icon" />
+                <input
+                  type="text"
+                  placeholder="e.g. Rohit Sharma"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                />
+              </div>
+            </label>
 
             {/* EMAIL */}
             <label className="auth-field">
-              <span>Registered Email Address *</span>
+              <span>Email Address *</span>
               <div className="auth-input-wrapper">
                 <FiMail className="auth-input-icon" />
                 <input
@@ -205,8 +232,21 @@ export default function Login() {
                   placeholder="you@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  autoFocus
                   required
+                />
+              </div>
+            </label>
+
+            {/* PHONE (OPTIONAL) */}
+            <label className="auth-field">
+              <span>Phone Number (Optional)</span>
+              <div className="auth-input-wrapper">
+                <FiPhone className="auth-input-icon" />
+                <input
+                  type="tel"
+                  placeholder="+91 98765 43210"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
                 />
               </div>
             </label>
@@ -221,28 +261,28 @@ export default function Login() {
               {loading ? (
                 <>
                   <FiRefreshCw className="spin" />
-                  <span>Sending Login Code...</span>
+                  <span>Sending OTP...</span>
                 </>
               ) : (
                 <>
-                  <span>Send Login Code</span>
+                  <span>Get Verification OTP</span>
                   <FiArrowRight />
                 </>
               )}
             </button>
 
             <small>
-              New here? <Link to="/signup">Create an account</Link>
+              Already have an account? <Link to="/login">Sign In</Link>
             </small>
           </form>
         )}
 
-        {/* ================= STEP 2: ENTER OTP ================= */}
+        {/* ================= STEP 2: VERIFY OTP FORM ================= */}
         {step === 2 && (
           <form onSubmit={handleVerifyOtp}>
             <span className="eyebrow">Step 2 of 2</span>
-            <h1>Enter Code</h1>
-            <p>We've sent a 6-digit login verification code to your email.</p>
+            <h1>Verify OTP</h1>
+            <p>Enter the 6-digit code sent to your registered email address.</p>
 
             {/* Email Chip with Change button */}
             <div className="email-chip">
@@ -282,7 +322,7 @@ export default function Login() {
 
             {/* Resend OTP Row */}
             <div className="otp-resend-row">
-              <span>Didn't receive code?</span>
+              <span>Didn't receive the code?</span>
               <button
                 type="button"
                 className="resend-btn"
@@ -293,7 +333,7 @@ export default function Login() {
                   `Resend in ${countdown}s`
                 ) : (
                   <>
-                    <FiRefreshCw /> Resend Code
+                    <FiRefreshCw /> Resend OTP
                   </>
                 )}
               </button>
@@ -319,13 +359,13 @@ export default function Login() {
               ) : (
                 <>
                   <FiCheckCircle />
-                  <span>Verify & Sign In</span>
+                  <span>Verify & Create Account</span>
                 </>
               )}
             </button>
 
             <small>
-              New here? <Link to="/signup">Create an account</Link>
+              Need help? <Link to="/support">Contact Customer Support</Link>
             </small>
           </form>
         )}

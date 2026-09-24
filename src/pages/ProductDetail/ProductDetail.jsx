@@ -11,7 +11,8 @@ import {
     FiChevronDown,
     FiStar,
     FiUser,
-    FiSend
+    FiSend,
+    FiCheck
 } from "react-icons/fi";
 
 import SiteHeader from "../../components/SiteHeader";
@@ -84,14 +85,12 @@ export default function ProductDetail() {
     const product = {
         ...rawProduct,
         id: rawProduct._id || rawProduct.id,
-        points: rawProduct.points && rawProduct.points.length ? rawProduct.points : [
-            "Pure herbal formulation",
-            "100% natural ingredients",
-            "Clinically tested quality",
-            "Made in India"
-        ],
+        points: rawProduct.points && Array.isArray(rawProduct.points) ? rawProduct.points.filter(p => p && p.trim()) : [],
+        ingredients: rawProduct.ingredients && Array.isArray(rawProduct.ingredients) ? rawProduct.ingredients.filter(i => i && i.trim()) : [],
+        faq: rawProduct.faq && Array.isArray(rawProduct.faq) ? rawProduct.faq.filter(f => f && (f.question?.trim() || f.answer?.trim())) : [],
+        howToUse: rawProduct.howToUse || "",
         reviews: rawProduct.reviews || "850+",
-        desc: rawProduct.desc || rawProduct.shortDescription || "Authentic Ayurvedic preparation crafted with natural ingredients for wellness and vitality."
+        desc: rawProduct.desc || rawProduct.shortDescription || ""
     };
 
     const relatedProducts = allProducts.filter(p => p.slug !== slug).slice(0, 4);
@@ -99,6 +98,7 @@ export default function ProductDetail() {
     const [qty, setQty] = useState(1);
     const [tab, setTab] = useState("Description");
     const [wished, setWished] = useState(false);
+    const [addedToCart, setAddedToCart] = useState(false);
     const [userReviews, setUserReviews] = useState([]);
     const [showReviewForm, setShowReviewForm] = useState(false);
     const [reviewForm, setReviewForm] = useState({
@@ -184,15 +184,19 @@ export default function ProductDetail() {
         : Number(product.rating || 0).toFixed(1);
 
     useEffect(() => {
-        setWished(isInWishlist(product.id || product.slug));
+        const prodId = product._id || product.id || product.slug;
+        setWished(isInWishlist(prodId));
         return subscribeToStorage(() => {
-            setWished(isInWishlist(product.id || product.slug));
+            setWished(isInWishlist(prodId));
         });
-    }, [product.id, product.slug]);
+    }, [product._id, product.id, product.slug]);
 
     const handleAddToCart = () => {
         addToCartHelper(product, qty);
-        navigate("/cart");
+        setAddedToCart(true);
+        setTimeout(() => {
+            setAddedToCart(false);
+        }, 2000);
     };
 
     const handleBuyNow = () => {
@@ -480,13 +484,22 @@ export default function ProductDetail() {
 
                             <button
                                 type="button"
-                                className="btn cart-btn"
+                                className={`btn cart-btn ${addedToCart ? "added" : ""}`}
                                 onClick={handleAddToCart}
+                                style={
+                                    addedToCart
+                                        ? {
+                                            background: "#166534",
+                                            borderColor: "#22c55e",
+                                            color: "#86efac",
+                                        }
+                                        : {}
+                                }
                             >
 
-                                <FiShoppingBag />
+                                {addedToCart ? <FiCheck size={18} /> : <FiShoppingBag />}
 
-                                Add to Cart
+                                {addedToCart ? "Added to Cart!" : "Add to Cart"}
 
                             </button>
 
@@ -780,34 +793,81 @@ export default function ProductDetail() {
                                 </div>
                             ) : (
                                 <>
-                                    {tab === "Description" ? (
-                                        /<[a-z][\s\S]*>/i.test(product.desc) ? (
-                                            <div
-                                                className="rich-description-body"
-                                                dangerouslySetInnerHTML={{ __html: product.desc }}
-                                                style={{ lineHeight: 1.7, color: "#9ca9a1" }}
-                                            />
+                                    {tab === "Description" && (
+                                        product.desc ? (
+                                            /<[a-z][\s\S]*>/i.test(product.desc) ? (
+                                                <div
+                                                    className="rich-description-body"
+                                                    dangerouslySetInnerHTML={{ __html: product.desc }}
+                                                    style={{ lineHeight: 1.7, color: "#9ca9a1" }}
+                                                />
+                                            ) : (
+                                                <p style={{ lineHeight: 1.7, color: "#c1cfc8" }}>{product.desc}</p>
+                                            )
                                         ) : (
-                                            <p>{product.desc}</p>
+                                            <p style={{ color: "#799285" }}>No description provided for this product.</p>
                                         )
-                                    ) : (
-                                        <p>
-                                            {tab === "Benefits"
-                                                ? "Traditionally used as part of balanced wellness routines. Follow the product label and your healthcare professional's advice where appropriate."
-                                                : tab === "Ingredients"
-                                                    ? "Single-herb formulation with carefully processed botanical ingredients."
-                                                    : tab === "How to Use"
-                                                        ? (product.howToUse || "Refer to the product label for recommended usage, storage and preparation instructions.")
-                                                        : "For product-related questions, please contact our support team for assistance."
-                                            }
-                                        </p>
                                     )}
 
-                                    <ul>
-                                        {product.points.map(point => (
-                                            <li key={point}>{point}</li>
-                                        ))}
-                                    </ul>
+                                    {tab === "Benefits" && (
+                                        product.points && product.points.length > 0 ? (
+                                            <ul className="product-tab-list" style={{ paddingLeft: "20px", lineHeight: 1.9, color: "#c1cfc8" }}>
+                                                {product.points.map((point, i) => (
+                                                    <li key={i}>{point}</li>
+                                                ))}
+                                            </ul>
+                                        ) : (
+                                            <p style={{ color: "#799285" }}>No specific benefits added for this product.</p>
+                                        )
+                                    )}
+
+                                    {tab === "Ingredients" && (
+                                        product.ingredients && product.ingredients.length > 0 ? (
+                                            <ul className="product-tab-list" style={{ paddingLeft: "20px", lineHeight: 1.9, color: "#c1cfc8" }}>
+                                                {product.ingredients.map((ing, i) => (
+                                                    <li key={i}>{ing}</li>
+                                                ))}
+                                            </ul>
+                                        ) : (
+                                            <p style={{ color: "#799285" }}>No ingredients listed for this product.</p>
+                                        )
+                                    )}
+
+                                    {tab === "How to Use" && (
+                                        product.howToUse && product.howToUse.trim() ? (
+                                            <p style={{ lineHeight: 1.8, color: "#c1cfc8" }}>{product.howToUse}</p>
+                                        ) : (
+                                            <p style={{ color: "#799285" }}>No usage instructions specified for this product.</p>
+                                        )
+                                    )}
+
+                                    {tab === "FAQs" && (
+                                        product.faq && product.faq.length > 0 ? (
+                                            <div className="product-faq-list">
+                                                {product.faq.map((item, idx) => (
+                                                    <div
+                                                        key={idx}
+                                                        style={{
+                                                            marginBottom: "14px",
+                                                            padding: "14px 16px",
+                                                            background: "rgba(255, 255, 255, 0.03)",
+                                                            borderRadius: "8px",
+                                                            border: "1px solid rgba(216, 181, 106, 0.15)",
+                                                        }}
+                                                    >
+                                                        <h4 style={{ color: "#d8b56a", fontSize: "15px", marginBottom: "6px" }}>
+                                                            Q: {item.question}
+                                                        </h4>
+                                                        <p style={{ color: "#c1cfc8", fontSize: "14px", margin: 0, lineHeight: 1.6 }}>
+                                                            {item.answer}
+                                                        </p>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <p style={{ color: "#799285" }}>No FAQs added for this product yet.</p>
+                                        )
+                                    )}
                                 </>
                             )}
 

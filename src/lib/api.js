@@ -36,10 +36,16 @@ async function request(path, options = {}) {
   const cleanPath = path.startsWith("/") ? path : `/${path}`;
   const url = `${API_BASE_URL}${cleanPath}`;
 
-  const token =
-    typeof window !== "undefined"
-      ? localStorage.getItem("admin_token") || localStorage.getItem("token")
-      : null;
+  let token = null;
+  if (typeof window !== "undefined") {
+    if (cleanPath.startsWith("/api/admin")) {
+      token = localStorage.getItem("admin_token") || localStorage.getItem("token");
+    } else if (cleanPath.startsWith("/api/auth") || cleanPath.includes("my-orders")) {
+      token = localStorage.getItem("token") || localStorage.getItem("userToken");
+    } else {
+      token = localStorage.getItem("token") || localStorage.getItem("admin_token") || localStorage.getItem("userToken");
+    }
+  }
 
   const isFormData = typeof FormData !== "undefined" && options.body instanceof FormData;
 

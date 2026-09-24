@@ -1,13 +1,67 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { FiPackage, FiHeart, FiMapPin, FiUser, FiLifeBuoy, FiArrowRight } from "react-icons/fi";
 import UserShell from "../../components/UserShell";
 import { getWishlistCount } from "../../lib/cartWishlist";
+import api from "../../lib/api";
 import "./UserDashboard.css";
 
 export default function UserDashboard() {
-  const orders = JSON.parse(localStorage.getItem("vb_orders") || "[]");
-  const wishlistCount = getWishlistCount();
+  const [ordersCount, setOrdersCount] = useState(0);
+  const [addressesCount, setAddressesCount] = useState(0);
+  const [wishlistCount, setWishlistCount] = useState(getWishlistCount());
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    // 1. Local user
+    try {
+      const raw = localStorage.getItem("user");
+      setUser(raw ? JSON.parse(raw) : null);
+    } catch {
+      setUser(null);
+    }
+
+    setWishlistCount(getWishlistCount());
+
+    // 2. Fetch live counts from API
+    const fetchCounts = async () => {
+      const token = localStorage.getItem("token") || localStorage.getItem("userToken");
+      if (token) {
+        try {
+          const [orderRes, addrRes] = await Promise.all([
+            api.get("/api/orders/my-orders").catch(() => null),
+            api.get("/api/auth/addresses").catch(() => null),
+          ]);
+
+          if (orderRes?.success && Array.isArray(orderRes.orders)) {
+            setOrdersCount(orderRes.orders.length);
+          } else {
+            const localOrders = JSON.parse(localStorage.getItem("vb_orders") || "[]");
+            setOrdersCount(Array.isArray(localOrders) ? localOrders.length : 0);
+          }
+
+          if (addrRes?.success && Array.isArray(addrRes.addresses)) {
+            setAddressesCount(addrRes.addresses.length);
+          } else {
+            const localAddrs = JSON.parse(localStorage.getItem("vb_addresses") || "[]");
+            setAddressesCount(Array.isArray(localAddrs) ? localAddrs.length : 0);
+          }
+        } catch {
+          const localOrders = JSON.parse(localStorage.getItem("vb_orders") || "[]");
+          setOrdersCount(Array.isArray(localOrders) ? localOrders.length : 0);
+          const localAddrs = JSON.parse(localStorage.getItem("vb_addresses") || "[]");
+          setAddressesCount(Array.isArray(localAddrs) ? localAddrs.length : 0);
+        }
+      } else {
+        const localOrders = JSON.parse(localStorage.getItem("vb_orders") || "[]");
+        setOrdersCount(Array.isArray(localOrders) ? localOrders.length : 0);
+        const localAddrs = JSON.parse(localStorage.getItem("vb_addresses") || "[]");
+        setAddressesCount(Array.isArray(localAddrs) ? localAddrs.length : 0);
+      }
+    };
+
+    fetchCounts();
+  }, []);
 
   return (
     <UserShell>
@@ -15,7 +69,7 @@ export default function UserDashboard() {
         <div className="user-top">
           <div>
             <span className="eyebrow">My Account</span>
-            <h1>Hello, Wellness Lover</h1>
+            <h1>Hello, {user?.name || "Valued Customer"}</h1>
             <p>Manage your Veda Booti orders, addresses, and wishlist from one place.</p>
           </div>
           <Link className="btn" to="/shop">
@@ -26,7 +80,7 @@ export default function UserDashboard() {
         <div className="stats">
           <div>
             <FiPackage />
-            <b>{orders.length || 3}</b>
+            <b>{ordersCount}</b>
             <small>Total Orders</small>
           </div>
           <div>
@@ -36,7 +90,7 @@ export default function UserDashboard() {
           </div>
           <div>
             <FiMapPin />
-            <b>2</b>
+            <b>{addressesCount}</b>
             <small>Saved Addresses</small>
           </div>
         </div>

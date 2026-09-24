@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { FiLock, FiCheckCircle, FiTag, FiX, FiShield, FiTruck } from "react-icons/fi";
 import SiteHeader from "../../components/SiteHeader";
 import SiteFooter from "../../components/SiteFooter";
+import api from "../../lib/api";
 import {
   getCart,
   clearCart,
@@ -11,34 +12,22 @@ import {
 } from "../../lib/cartWishlist";
 import "./Checkout.css";
 
-const AVAILABLE_COUPONS = [
+const DEFAULT_COUPONS = [
   {
     code: "VEDA10",
     title: "10% Flat Discount",
-    desc: "10% off on all products",
-    discountPercent: 10,
+    description: "10% off on all products",
+    discountType: "Percentage",
+    discountValue: 10,
     minOrder: 0
   },
   {
     code: "AYURVEDA50",
     title: "Flat ₹50 OFF",
-    desc: "Save ₹50 on orders above ₹499",
-    flatDiscount: 50,
+    description: "Save ₹50 on orders above ₹499",
+    discountType: "Fixed Amount",
+    discountValue: 50,
     minOrder: 499
-  },
-  {
-    code: "FIRSTBUY",
-    title: "15% Special Welcome",
-    desc: "15% off for first-time wellness buyers",
-    discountPercent: 15,
-    minOrder: 0
-  },
-  {
-    code: "GOLD500",
-    title: "Flat ₹500 Mega Saving",
-    desc: "Save ₹500 on orders above ₹2,000",
-    flatDiscount: 500,
-    minOrder: 2000
   }
 ];
 
@@ -48,6 +37,7 @@ export default function Checkout() {
 
   const [checkoutItems, setCheckoutItems] = useState([]);
   const [isDirect, setIsDirect] = useState(false);
+  const [placingOrder, setPlacingOrder] = useState(false);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -61,7 +51,8 @@ export default function Checkout() {
     paymentMethod: "cod"
   });
 
-  // Coupon State
+  // Coupons State
+  const [availableCoupons, setAvailableCoupons] = useState(DEFAULT_COUPONS);
   const [couponInput, setCouponInput] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [couponError, setCouponError] = useState("");
@@ -82,6 +73,57 @@ export default function Checkout() {
     }
   }, [location.state]);
 
+  // Fetch dynamic active coupons & autofill user profile
+  useEffect(() => {
+    const fetchCoupons = async () => {
+      try {
+        const res = await api.get("/api/coupons?active=true");
+        if (res?.success && Array.isArray(res.coupons) && res.coupons.length > 0) {
+          setAvailableCoupons(res.coupons);
+        }
+      } catch (err) {
+        console.warn("Could not fetch remote coupons, using defaults:", err);
+      }
+    };
+    fetchCoupons();
+
+    const fetchUserProfile = async () => {
+      try {
+        const token = localStorage.getItem("token") || localStorage.getItem("userToken");
+        if (!token) return;
+
+        const res = await api.get("/api/auth/me");
+        if (res?.success && res.user) {
+          setFormData((prev) => ({
+            ...prev,
+            name: prev.name || res.user.name || "",
+            email: prev.email || res.user.email || "",
+            phone: prev.phone || res.user.phone || "",
+          }));
+        }
+
+        const addrRes = await api.get("/api/auth/addresses");
+        if (addrRes?.success && Array.isArray(addrRes.addresses) && addrRes.addresses.length > 0) {
+          const defaultAddr = addrRes.addresses.find((a) => a.isDefault) || addrRes.addresses[0];
+          if (defaultAddr) {
+            setFormData((prev) => ({
+              ...prev,
+              name: prev.name || defaultAddr.fullName || "",
+              phone: prev.phone || defaultAddr.phone || "",
+              address: prev.address || defaultAddr.street || "",
+              city: prev.city || defaultAddr.city || "",
+              state: prev.state || defaultAddr.state || "",
+              pincode: prev.pincode || defaultAddr.pincode || "",
+            }));
+          }
+        }
+      } catch (err) {
+        // silent
+      }
+    };
+    fetchUserProfile();
+  }, []);
+
   const subtotal = checkoutItems.reduce(
     (sum, item) => sum + (Number(item.price) || 0) * (item.qty || 1),
     0
@@ -89,20 +131,29 @@ export default function Checkout() {
 
   const shipping = subtotal >= 499 ? 0 : 49;
 
-  // Calculate discount based on applied coupon
+  // Calculate discount based on applied coupon (Percentage or Fixed Amount)
   let discountAmount = 0;
   if (appliedCoupon) {
-    if (appliedCoupon.discountPercent) {
-      discountAmount = Math.round((subtotal * appliedCoupon.discountPercent) / 100);
-    } else if (appliedCoupon.flatDiscount) {
-      discountAmount = Math.min(appliedCoupon.flatDiscount, subtotal);
+    const isPercent =
+      appliedCoupon.discountType === "Percentage" || !!appliedCoupon.discountPercent;
+    const value = Number(
+      appliedCoupon.discountValue ??
+      appliedCoupon.discountPercent ??
+      appliedCoupon.flatDiscount ??
+      0
+    );
+
+    if (isPercent) {
+      discountAmount = Math.round((subtotal * value) / 100);
+    } else {
+      discountAmount = Math.min(value, subtotal);
     }
   }
 
   const grandTotal = Math.max(0, subtotal - discountAmount + shipping);
 
   const applyCouponCode = (codeToApply) => {
-    const cleanCode = codeToApply.trim().toUpperCase();
+    const cleanCode = (codeToApply || "").trim().toUpperCase();
     setCouponError("");
     setCouponSuccess("");
 
@@ -111,15 +162,18 @@ export default function Checkout() {
       return;
     }
 
-    const match = AVAILABLE_COUPONS.find((c) => c.code === cleanCode);
+    const match = availableCoupons.find(
+      (c) => c.code.toUpperCase() === cleanCode
+    );
     if (!match) {
-      setCouponError(`Coupon "${cleanCode}" is invalid.`);
+      setCouponError(`Coupon "${cleanCode}" is invalid or expired.`);
       return;
     }
 
-    if (subtotal < match.minOrder) {
+    const minOrder = Number(match.minOrder) || 0;
+    if (subtotal < minOrder) {
       setCouponError(
-        `Coupon "${match.code}" requires minimum order of ₹${match.minOrder}. (Your subtotal: ₹${subtotal})`
+        `Coupon "${match.code}" requires minimum order of ₹${minOrder}. (Your subtotal: ₹${subtotal})`
       );
       return;
     }
@@ -141,7 +195,7 @@ export default function Checkout() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handlePlaceOrder = (e) => {
+  const handlePlaceOrder = async (e) => {
     e.preventDefault();
 
     if (checkoutItems.length === 0) {
@@ -149,8 +203,7 @@ export default function Checkout() {
       return;
     }
 
-    // Save order in localStorage vb_orders
-    const existingOrders = JSON.parse(localStorage.getItem("vb_orders") || "[]");
+    setPlacingOrder(true);
     const orderNumber = `VB-${Date.now().toString().slice(-6)}`;
 
     const newOrder = {
@@ -161,25 +214,46 @@ export default function Checkout() {
         year: "numeric"
       }),
       status: "Confirmed",
-      items: checkoutItems,
+      items: checkoutItems.map((item) => ({
+        id: item._id || item.id,
+        name: item.name,
+        price: Number(item.price) || 0,
+        qty: Number(item.qty) || 1,
+        image: item.image || item.images?.[0] || ""
+      })),
       subtotal,
       discount: discountAmount,
       shipping,
       grandTotal,
       coupon: appliedCoupon ? appliedCoupon.code : null,
-      customer: formData
+      customer: formData,
+      paymentMethod: formData.paymentMethod || "cod"
     };
 
+    try {
+      // 1. Post to backend order API
+      const res = await api.post("/api/orders", newOrder);
+      if (res?.success && res.order) {
+        newOrder._id = res.order._id;
+        newOrder.orderId = res.order.orderId || orderNumber;
+      }
+    } catch (err) {
+      console.warn("Could not save to remote order API, saved locally:", err.message);
+    }
+
+    // 2. Save order in localStorage vb_orders for immediate client-side availability
+    const existingOrders = JSON.parse(localStorage.getItem("vb_orders") || "[]");
     existingOrders.unshift(newOrder);
     localStorage.setItem("vb_orders", JSON.stringify(existingOrders));
 
-    // Clear appropriate storage
+    // 3. Clear appropriate storage
     if (isDirect) {
       clearDirectCheckoutItem();
     } else {
       clearCart();
     }
 
+    setPlacingOrder(false);
     nav("/thank-you", { state: { order: newOrder } });
   };
 
@@ -289,8 +363,8 @@ export default function Checkout() {
                 </label>
               </div>
 
-              <button className="btn place-order-btn" type="submit">
-                <FiLock /> Place Order (₹{grandTotal})
+              <button className="btn place-order-btn" type="submit" disabled={placingOrder}>
+                <FiLock /> {placingOrder ? "Placing Order..." : `Place Order (₹${grandTotal})`}
               </button>
             </form>
 
@@ -364,24 +438,37 @@ export default function Checkout() {
                 )}
 
                 {/* Available Coupon Chips */}
-                <div className="available-coupons">
-                  <span className="available-title">Available Coupons:</span>
-                  <div className="coupon-chips">
-                    {AVAILABLE_COUPONS.map((c) => (
-                      <div
-                        key={c.code}
-                        className={`coupon-chip ${
-                          appliedCoupon?.code === c.code ? "applied" : ""
-                        }`}
-                        onClick={() => applyCouponCode(c.code)}
-                        title={c.desc}
-                      >
-                        <b>{c.code}</b>
-                        <small>{c.title}</small>
-                      </div>
-                    ))}
+                {availableCoupons.length > 0 && (
+                  <div className="available-coupons">
+                    <span className="available-title">Available Coupons:</span>
+                    <div className="coupon-chips">
+                      {availableCoupons.map((c) => {
+                        const discountLabel =
+                          c.discountType === "Percentage" || c.discountPercent
+                            ? `${c.discountValue || c.discountPercent}% OFF`
+                            : `₹${c.discountValue || c.flatDiscount} OFF`;
+                        return (
+                          <div
+                            key={c.code}
+                            className={`coupon-chip ${
+                              appliedCoupon?.code === c.code ? "applied" : ""
+                            }`}
+                            onClick={() => applyCouponCode(c.code)}
+                            title={c.description || c.title || discountLabel}
+                          >
+                            <div className="chip-code-row">
+                              <b>{c.code}</b>
+                              <span className="chip-badge">{discountLabel}</span>
+                            </div>
+                            <small>
+                              {c.title || c.description || (c.minOrder > 0 ? `Min order ₹${c.minOrder}` : "Special Offer")}
+                            </small>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
 
               {/* Bill Details */}

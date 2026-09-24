@@ -1,0 +1,146 @@
+/* =========================================================
+   ADMIN COUPONS
+========================================================= */
+
+.coupon-mgmt {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Stats */
+.coupon-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+}
+
+.coupon-stat-card {
+  background: #091d14;
+  border: 1px solid rgba(216, 181, 106, 0.15);
+  border-radius: 10px;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.coupon-stat-card span {
+  font-size: 12px;
+  color: #8c9a92;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+.coupon-stat-card strong {
+  font-size: 24px;
+  color: #edf4ef;
+  font-weight: 700;
+}
+
+/* Table overrides for coupons */
+.coupon-mgmt .table-row {
+  grid-template-columns: 140px minmax(200px, 1.6fr) 140px 120px 110px 100px;
+}
+
+.code-cell code {
+  background: rgba(216, 181, 106, 0.12);
+  color: #d8b56a;
+  padding: 4px 8px;
+  border-radius: 5px;
+  font-family: monospace;
+  font-weight: 700;
+  font-size: 13px;
+  border: 1px dashed rgba(216, 181, 106, 0.35);
+  letter-spacing: 0.5px;
+}
+
+/* Modal */
+.coupon-modal {
+  background: #07190f;
+  border: 1px solid #1f4230;
+  border-radius: 14px;
+  width: 95%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.6);
+  display: flex;
+  flex-direction: column;
+}
+
+.coupon-form {
+  padding: 20px 24px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.coupon-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.coupon-form-grid .full {
+  grid-column: 1 / -1;
+}
+
+.coupon-form .field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.coupon-form label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #c9d8ce;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.coupon-form label span {
+  color: #e57373;
+}
+
+.coupon-form .uppercase {
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.8px;
+}
+
+.coupon-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding-top: 14px;
+  border-top: 1px solid #143023;
+}
+
+.secondary-btn {
+  background: #11261c;
+  color: #c1d2c7;
+  border: 1px solid #204533;
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.secondary-btn:hover {
+  background: #193829;
+  color: #fff;
+}
+
+@media (max-width: 768px) {
+  .coupon-mgmt .table-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .coupon-form-grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -99,6 +99,7 @@ export default function AdminProducts() {
         subtitle: "",
         tag: "Bestseller",
         stock: 100,
+        weight: "",
         benefits: [""],
         ingredients: [""],
         howToUse: "",
@@ -330,6 +331,7 @@ export default function AdminProducts() {
             subtitle: product.subtitle || "",
             tag: product.tag || "Bestseller",
             stock: product.stock !== undefined ? product.stock : 100,
+            weight: product.weight || "",
             benefits: product.points && product.points.length ? product.points : [""],
             ingredients: product.ingredients && product.ingredients.length ? product.ingredients : [""],
             howToUse: product.howToUse || "",
@@ -374,6 +376,7 @@ export default function AdminProducts() {
             subtitle: "",
             tag: "Bestseller",
             stock: 100,
+            weight: "",
             benefits: [""],
             ingredients: [""],
             howToUse: "",
@@ -439,7 +442,12 @@ export default function AdminProducts() {
     ========================= */
 
     const handleSubmit = async (e) => {
-        e.preventDefault();
+        if (e && e.preventDefault) e.preventDefault();
+
+        // Enforce: only complete Step 4 can submit & save the product to database!
+        if (step !== 4) {
+            return;
+        }
 
         if (!form.productName.trim()) {
             alert("Please enter product name.");
@@ -481,7 +489,8 @@ export default function AdminProducts() {
                     : form.shortDescription.replace(/<[^>]*>/g, "").trim()
             );
             formData.append("tag", form.tag || "Bestseller");
-            formData.append("stock", form.stock || 100);
+            formData.append("stock", form.stock !== "" && form.stock !== undefined ? form.stock : 100);
+            formData.append("weight", form.weight || "");
             formData.append("howToUse", form.howToUse || "");
             formData.append("metaTitle", form.metaTitle || "");
             formData.append("metaDescription", form.metaDescription || "");
@@ -653,6 +662,7 @@ export default function AdminProducts() {
                     <span>Product</span>
                     <span>Category</span>
                     <span>Price</span>
+                    <span>Stock</span>
                     <span>Status</span>
                     <span>Actions</span>
                 </div>
@@ -728,6 +738,20 @@ export default function AdminProducts() {
                                             {product.discount}
                                         </span>
                                     )}
+                                </span>
+
+                                <span>
+                                    <span style={{
+                                        display: "inline-block",
+                                        padding: "3px 8px",
+                                        borderRadius: "6px",
+                                        fontSize: "12px",
+                                        fontWeight: 600,
+                                        background: (Number(product.stock) > 0 || product.stock === undefined) ? "rgba(34, 197, 94, 0.12)" : "rgba(239, 68, 68, 0.12)",
+                                        color: (Number(product.stock) > 0 || product.stock === undefined) ? "#4ade80" : "#f87171"
+                                    }}>
+                                        {product.stock !== undefined ? `${product.stock} units` : "100 units"}
+                                    </span>
                                 </span>
 
                                 <span>
@@ -905,7 +929,15 @@ export default function AdminProducts() {
 
                         <form
                             className="product-form"
-                            onSubmit={handleSubmit}
+                            onSubmit={(e) => e.preventDefault()}
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter" && e.target.tagName === "INPUT") {
+                                    e.preventDefault();
+                                    if (step < 4) {
+                                        nextStep();
+                                    }
+                                }
+                            }}
                         >
 
                             {/* =================================================
@@ -1237,14 +1269,51 @@ export default function AdminProducts() {
                                         <div className="field">
 
                                             <label>
-                                                Product Weight / Quantity
+                                                Available Stock Quantity (Units) <span>*</span>
                                             </label>
 
                                             <input
                                                 className="input"
                                                 type="number"
-                                                placeholder="500"
+                                                min="0"
+                                                value={form.stock}
+                                                onChange={(e) =>
+                                                    updateForm(
+                                                        "stock",
+                                                        e.target.value
+                                                    )
+                                                }
+                                                placeholder="e.g. 100"
+                                                required
                                             />
+                                            <small style={{ color: "#799285", fontSize: "11px", marginTop: "4px", display: "block" }}>
+                                                Total stock count available for purchase
+                                            </small>
+
+                                        </div>
+
+
+                                        <div className="field">
+
+                                            <label>
+                                                Product Net Weight / Measurement
+                                            </label>
+
+                                            <input
+                                                className="input"
+                                                type="text"
+                                                value={form.weight}
+                                                onChange={(e) =>
+                                                    updateForm(
+                                                        "weight",
+                                                        e.target.value
+                                                    )
+                                                }
+                                                placeholder="e.g. 500, 250, 60"
+                                            />
+                                            <small style={{ color: "#799285", fontSize: "11px", marginTop: "4px", display: "block" }}>
+                                                Pack size or weight (e.g. 500 Gram, 60 Capsules)
+                                            </small>
 
                                         </div>
 
@@ -1896,6 +1965,26 @@ export default function AdminProducts() {
                                                 </strong>
                                             </div>
 
+                                            <div>
+                                                <span>
+                                                    Stock Quantity
+                                                </span>
+
+                                                <strong style={{ color: "#86efac" }}>
+                                                    {form.stock !== "" && form.stock !== undefined ? form.stock : 100} Units
+                                                </strong>
+                                            </div>
+
+                                            <div>
+                                                <span>
+                                                    Net Measure
+                                                </span>
+
+                                                <strong>
+                                                    {form.weight ? `${form.weight} ${form.unit}` : form.unit}
+                                                </strong>
+                                            </div>
+
                                         </div>
 
                                     </div>
@@ -1942,9 +2031,14 @@ export default function AdminProducts() {
                                 {step < 4 ? (
 
                                     <button
+                                        key="btn-wizard-next"
                                         type="button"
                                         className="btn next-btn"
-                                        onClick={nextStep}
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            nextStep();
+                                        }}
                                     >
                                         Next
                                         <FiChevronRight />
@@ -1953,8 +2047,14 @@ export default function AdminProducts() {
                                 ) : (
 
                                     <button
-                                        type="submit"
+                                        key="btn-wizard-save"
+                                        type="button"
                                         className="btn save-product-btn"
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            handleSubmit(e);
+                                        }}
                                         disabled={submitting}
                                         style={{ opacity: submitting ? 0.7 : 1, cursor: submitting ? "not-allowed" : "pointer" }}
                                     >

@@ -11,7 +11,9 @@ import {
     FiVolumeX,
     FiChevronLeft,
     FiChevronRight,
-    FiExternalLink
+    FiExternalLink,
+    FiShoppingCart,
+    FiZap
 } from "react-icons/fi";
 
 import ProductCard from "../../components/ProductCard";
@@ -235,6 +237,60 @@ export default function Home() {
             prevSlide();
         }
         setTouchStartX(null);
+    };
+
+    const featuredProduct = products[0] || null;
+
+    const getFeaturedImage = (product) =>
+        product?.image ||
+        product?.imageUrl ||
+        product?.thumbnail ||
+        (Array.isArray(product?.images) ? product.images[0] : null) ||
+        "/assets/product1.jpg";
+
+    const getFeaturedPrice = (product) =>
+        product?.salePrice ??
+        product?.sellingPrice ??
+        product?.price ??
+        product?.mrp ??
+        499;
+
+    const getFeaturedOldPrice = (product) =>
+        product?.mrp && Number(product.mrp) > Number(getFeaturedPrice(product))
+            ? product.mrp
+            : null;
+
+    const getFeaturedDescription = (product) =>
+        product?.shortDescription ||
+        product?.description ||
+        "A carefully crafted Ayurvedic wellness essential made with thoughtfully selected natural ingredients for your everyday self-care ritual.";
+
+    const handleFeaturedAddToCart = () => {
+        if (!featuredProduct) return;
+
+        try {
+            const existingCart = JSON.parse(localStorage.getItem("vedaCart") || "[]");
+            const productId = featuredProduct._id || featuredProduct.id;
+
+            const alreadyInCart = existingCart.some(
+                (item) => (item._id || item.id) === productId
+            );
+
+            if (!alreadyInCart) {
+                localStorage.setItem(
+                    "vedaCart",
+                    JSON.stringify([...existingCart, { ...featuredProduct, quantity: 1 }])
+                );
+            }
+
+            window.dispatchEvent(
+                new CustomEvent("cart:add", {
+                    detail: { product: featuredProduct, quantity: 1 }
+                })
+            );
+        } catch (error) {
+            console.error("Failed to add featured product to cart:", error);
+        }
     };
 
     return (
@@ -517,6 +573,96 @@ export default function Home() {
 
                     </div>
 
+                </section>
+
+
+                {/* ================= FEATURED PRODUCT ================= */}
+                <section className="featured-product-section">
+                    <div className="featured-product-inner container">
+
+                        <div className="featured-product-media">
+                            <div className="featured-product-image-card">
+                                <span className="featured-product-badge">
+                                    VEDA BOOTI · FEATURED
+                                </span>
+
+                                <img
+                                    src={getFeaturedImage(featuredProduct)}
+                                    alt={featuredProduct?.name || "Featured Veda Booti product"}
+                                    className="featured-product-image"
+                                    onError={(e) => {
+                                        if (e.currentTarget.src.endsWith("/assets/product1.jpg")) return;
+                                        e.currentTarget.src = "/assets/product1.jpg";
+                                    }}
+                                />
+                            </div>
+
+                            <div className="featured-product-actions">
+                                <button
+                                    type="button"
+                                    className="featured-cart-btn"
+                                    onClick={handleFeaturedAddToCart}
+                                    disabled={!featuredProduct}
+                                >
+                                    <FiShoppingCart />
+                                    <span>Add to Cart</span>
+                                </button>
+
+                                <Link
+                                    to={
+                                        featuredProduct
+                                            ? `/product/${featuredProduct._id || featuredProduct.id}`
+                                            : "/shop"
+                                    }
+                                    className="featured-buy-btn"
+                                >
+                                    <FiZap />
+                                    <span>Buy Now</span>
+                                </Link>
+                            </div>
+                        </div>
+
+                        <div className="featured-product-content">
+                            <span className="eyebrow">A Little Wellness, Every Day</span>
+
+                            <h2>
+                                Discover Our{" "}
+                                <span>Featured Product</span>
+                            </h2>
+
+                            <h3>
+                                {featuredProduct?.name || "Natural Ayurvedic Wellness Essential"}
+                            </h3>
+
+                            <div className="featured-product-price-row">
+                                <strong>₹{Number(getFeaturedPrice(featuredProduct)).toLocaleString("en-IN")}</strong>
+                                {getFeaturedOldPrice(featuredProduct) && (
+                                    <del>
+                                        ₹{Number(getFeaturedOldPrice(featuredProduct)).toLocaleString("en-IN")}
+                                    </del>
+                                )}
+                            </div>
+
+                            <p className="featured-product-description">
+                                {getFeaturedDescription(featuredProduct)}
+                            </p>
+
+                            <div className="featured-product-points">
+                                <span><FiFeather /> Natural Ingredients</span>
+                                <span><FiShield /> Quality Focused</span>
+                                <span><FiHeart /> Everyday Wellness</span>
+                            </div>
+
+                            <div className="featured-product-note">
+                                <span className="featured-note-line" />
+                                <p>
+                                    Rooted in traditional Ayurvedic wisdom and created for
+                                    modern wellness routines.
+                                </p>
+                            </div>
+                        </div>
+
+                    </div>
                 </section>
 
 

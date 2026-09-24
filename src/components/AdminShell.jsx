@@ -16,6 +16,7 @@ import {
   FiEdit3,
   FiVideo,
   FiRotateCcw,
+  FiTag,
 } from "react-icons/fi";
 import "./AdminShell.css";
 
@@ -27,6 +28,7 @@ export default function AdminShell({ children }) {
     ["/admin", "Dashboard", FiHome],
     ["/admin/categories", "Categories", FiGrid],
     ["/admin/products", "Products", FiPackage],
+    ["/admin/coupons", "Coupons", FiTag],
     ["/admin/orders", "Orders", FiShoppingBag],
     ["/admin/support", "Support", FiMessageCircle],
     ["/admin/hero", "Home Hero", FiImage],

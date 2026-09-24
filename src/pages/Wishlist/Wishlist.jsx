@@ -9,6 +9,7 @@ import {
   addToCart,
   subscribeToStorage
 } from "../../lib/cartWishlist";
+import { getProductImageUrl } from "../../lib/api";
 import "./Wishlist.css";
 
 export default function Wishlist() {
@@ -52,67 +53,73 @@ export default function Wishlist() {
 
         {items.length > 0 ? (
           <div className="wishlist-grid">
-            {items.map((item) => (
-              <article className="wish-card" key={item.id}>
-                <div className="wish-media">
-                  {item.image ? (
-                    <img
-                      src={item.image}
-                      alt={item.name}
-                      className="wish-img"
-                    />
-                  ) : (
-                    <div className="wish-placeholder">
-                      <span>Veda Booti</span>
-                    </div>
-                  )}
-                  <button
-                    type="button"
-                    className="wish-remove-icon-btn"
-                    onClick={() => handleRemove(item.id)}
-                    aria-label="Remove from Wishlist"
-                    title="Remove from Wishlist"
-                  >
-                    <FiTrash2 />
-                  </button>
-                </div>
+            {items.map((item, index) => {
+              const itemKey = item._id || item.id || item.slug || index;
+              const itemId = item._id || item.id || item.slug;
+              const imgSrc = getProductImageUrl(item.image || (item.images && item.images[0]));
 
-                <div className="wish-body">
-                  <Link
-                    to={`/product/${item.slug || "ashwagandha-powder"}`}
-                    className="wish-title"
-                  >
-                    <h3>{item.name}</h3>
-                  </Link>
-                  <p>{item.subtitle}</p>
-
-                  <div className="wish-price-row">
-                    <span className="wish-price">₹{item.price}</span>
-                    {item.old && (
-                      <span className="wish-old">₹{item.old}</span>
+              return (
+                <article className="wish-card" key={itemKey}>
+                  <div className="wish-media">
+                    {imgSrc ? (
+                      <img
+                        src={imgSrc}
+                        alt={item.name}
+                        className="wish-img"
+                      />
+                    ) : (
+                      <div className="wish-placeholder">
+                        <span>Veda Booti</span>
+                      </div>
                     )}
+                    <button
+                      type="button"
+                      className="wish-remove-icon-btn"
+                      onClick={() => handleRemove(itemId)}
+                      aria-label="Remove from Wishlist"
+                      title="Remove from Wishlist"
+                    >
+                      <FiTrash2 />
+                    </button>
                   </div>
 
-                  <div className="wish-actions">
-                    <button
-                      type="button"
-                      className="btn wish-add-btn"
-                      onClick={() => handleAddToCart(item)}
+                  <div className="wish-body">
+                    <Link
+                      to={`/product/${item.slug || itemId}`}
+                      className="wish-title"
                     >
-                      <FiShoppingBag />
-                      <span>Move to Cart</span>
-                    </button>
-                    <button
-                      type="button"
-                      className="wish-remove-btn"
-                      onClick={() => handleRemove(item.id)}
-                    >
-                      <FiTrash2 /> Remove
-                    </button>
+                      <h3>{item.name}</h3>
+                    </Link>
+                    <p>{item.subtitle}</p>
+
+                    <div className="wish-price-row">
+                      <span className="wish-price">₹{item.price}</span>
+                      {(item.oldPrice || item.old) && Number(item.oldPrice || item.old) > Number(item.price) && (
+                        <span className="wish-old">₹{item.oldPrice || item.old}</span>
+                      )}
+                    </div>
+
+                    <div className="wish-actions">
+                      <button
+                        type="button"
+                        className="btn wish-add-btn"
+                        onClick={() => handleAddToCart(item)}
+                      >
+                        <FiShoppingBag />
+                        <span>Move to Cart</span>
+                      </button>
+                      <button
+                        type="button"
+                        className="wish-remove-btn"
+                        onClick={() => handleRemove(itemId)}
+                      >
+                        <FiTrash2 /> Remove
+                      </button>
+                    </div>
                   </div>
-                </div>
-              </article>
-            ))}
+                </article>
+              );
+            })}
           </div>
         ) : (
           <div className="wish-empty">

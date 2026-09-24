@@ -26,6 +26,7 @@ import TermsConditions from "./pages/TermsConditions/TermsConditions";
 // USER PAGES
 // ================================
 import Login from "./pages/Login/Login";
+import SignUp from "./pages/SignUp/SignUp";
 import UserDashboard from "./pages/UserDashboard/UserDashboard";
 import Profile from "./pages/Profile/Profile";
 import Orders from "./pages/Orders/Orders";
@@ -40,6 +41,7 @@ import AdminLogin from "./pages/AdminLogin/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard/AdminDashboard";
 import AdminCategories from "./pages/AdminCategories/AdminCategories";
 import AdminProducts from "./pages/AdminProducts/AdminProducts";
+import AdminCoupons from "./pages/AdminCoupons/AdminCoupons";
 import AdminOrders from "./pages/AdminOrders/AdminOrders";
 import AdminSupport from "./pages/AdminSupport/AdminSupport";
 import AdminHero from "./pages/AdminHero/AdminHero";
@@ -136,6 +138,16 @@ export default function App() {
                 />
 
                 <Route
+                    path="/signup"
+                    element={<SignUp />}
+                />
+
+                <Route
+                    path="/register"
+                    element={<SignUp />}
+                />
+
+                <Route
                     path="/user"
                     element={<UserDashboard />}
                 />
@@ -198,6 +210,11 @@ export default function App() {
                 <Route
                     path="/admin/products"
                     element={<AdminProducts />}
+                />
+
+                <Route
+                    path="/admin/coupons"
+                    element={<AdminCoupons />}
                 />
 
                 <Route
