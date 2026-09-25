@@ -2,6 +2,12 @@ import express from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import Admin from "../module/Admin.js";
+import Order from "../module/Order.js";
+import Product from "../module/Product.js";
+import Category from "../module/Category.js";
+import User from "../module/User.js";
+import SupportTicket from "../module/SupportTicket.js";
+import ReturnRequest from "../module/ReturnRequest.js";
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || "vedabooti_super_secret_jwt_key_2026";
@@ -92,5 +98,80 @@ router.get("/me", verifyAdminToken, async (req, res) => {
     return res.status(500).json({ success: false, message: error.message });
   }
 });
+
+// GET /dashboard-stats
+const getDashboardStats = async (req, res) => {
+  try {
+    const [
+      totalOrders,
+      totalProducts,
+      totalCategories,
+      totalUsers,
+      totalTickets,
+      openTickets,
+      pendingReturns,
+      recentOrders,
+      lowStockProducts,
+    ] = await Promise.all([
+      Order.countDocuments(),
+      Product.countDocuments(),
+      Category.countDocuments(),
+      User.countDocuments(),
+      SupportTicket.countDocuments(),
+      SupportTicket.countDocuments({ status: { $ne: "Closed" } }),
+      ReturnRequest.countDocuments({ status: "Pending" }),
+      Order.find().sort({ createdAt: -1 }).limit(6),
+      Product.find({ stock: { $lte: 5 } }).limit(5),
+    ]);
+
+    // Calculate total revenue from non-cancelled orders
+    const revenueAgg = await Order.aggregate([
+      { $match: { status: { $ne: "Cancelled" } } },
+      { $group: { _id: null, total: { $sum: "$grandTotal" } } },
+    ]);
+    const totalRevenue = revenueAgg[0]?.total || 0;
+
+    // Calculate fulfillment rate
+    const deliveredCount = await Order.countDocuments({ status: "Delivered" });
+    const fulfillmentRate = totalOrders > 0 ? Math.round((deliveredCount / totalOrders) * 100) : 100;
+
+    // Calculate in-stock percentage
+    const inStockCount = await Product.countDocuments({ stock: { $gt: 0 } });
+    const inStockRate = totalProducts > 0 ? Math.round((inStockCount / totalProducts) * 100) : 100;
+
+    // Support SLA rate
+    const closedTickets = await SupportTicket.countDocuments({ status: "Closed" });
+    const supportRate = totalTickets > 0 ? Math.round((closedTickets / totalTickets) * 100) : 100;
+
+    return res.status(200).json({
+      success: true,
+      stats: {
+        totalOrders,
+        totalRevenue,
+        totalProducts,
+        totalCategories,
+        totalUsers,
+        totalTickets,
+        openTickets,
+        pendingReturns,
+        fulfillmentRate,
+        inStockRate,
+        supportRate,
+      },
+      recentOrders,
+      lowStockProducts,
+    });
+  } catch (error) {
+    console.error("[Dashboard Stats Error]:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch dashboard stats.",
+      error: error.message,
+    });
+  }
+};
+
+router.get("/dashboard-stats", getDashboardStats);
+router.get("/stats", getDashboardStats);
 
 export default router;

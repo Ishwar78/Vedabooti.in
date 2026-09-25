@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import {
   FiStar,
   FiSearch,
@@ -12,6 +13,7 @@ import {
   FiClock,
   FiCheckCircle,
   FiAlertTriangle,
+  FiPlus,
 } from "react-icons/fi";
 import AdminShell from "../../components/AdminShell";
 import api, { getProductImageUrl } from "../../lib/api";
@@ -119,6 +121,14 @@ export default function AdminReviews() {
                 <span>Avg Rating</span>
               </div>
             </div>
+
+            <Link
+              to="/admin/create-review"
+              className="gold-btn btn-create-review"
+              style={{ textDecoration: "none" }}
+            >
+              <FiPlus /> Create Review
+            </Link>
 
             <button
               type="button"

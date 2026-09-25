@@ -9,7 +9,6 @@ import {
 import SiteHeader from "../../components/SiteHeader";
 import SiteFooter from "../../components/SiteFooter";
 import ProductCard from "../../components/ProductCard";
-import { allProducts } from "../../data/products";
 import api from "../../lib/api";
 
 import "./Shop.css";
@@ -19,7 +18,8 @@ export default function Shop() {
     const initialCategory = searchParams.get("category") || "All Products";
 
     const [dbCategories, setDbCategories] = useState([]);
-    const [dbProducts, setDbProducts] = useState(allProducts);
+    const [dbProducts, setDbProducts] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [cat, setCat] = useState(initialCategory);
     const [sort, setSort] = useState("Featured");
     const [term, setTerm] = useState("");
@@ -47,12 +47,18 @@ export default function Shop() {
                         setDbCategories(catRes);
                     }
 
-                    if (prodRes && prodRes.products && prodRes.products.length > 0) {
+                    if (prodRes && prodRes.products && Array.isArray(prodRes.products)) {
                         setDbProducts(prodRes.products);
+                    } else if (Array.isArray(prodRes)) {
+                        setDbProducts(prodRes);
+                    } else {
+                        setDbProducts([]);
                     }
                 }
             } catch (err) {
                 console.error("Failed to load shop data:", err);
+            } finally {
+                if (isMounted) setLoading(false);
             }
         };
         loadShopData();
@@ -65,7 +71,7 @@ export default function Shop() {
         return ["All Products", ...dbCategories.map((c) => c.name)];
     }, [dbCategories]);
 
-    const activeProductList = dbProducts.length > 0 ? dbProducts : allProducts;
+    const activeProductList = dbProducts;
 
     const categoryCounts = useMemo(() => {
         const counts = {};
@@ -306,7 +312,7 @@ export default function Shop() {
                                                 }
                                             />
                                             <span>{c.name}</span>
-                                            <small>({count})</small>
+                                            {/* <small>({count})</small> */}
                                         </label>
                                     );
                                 })}
@@ -320,7 +326,7 @@ export default function Shop() {
                             </div>
 
 
-                            <div className="filter-group">
+                            {/* <div className="filter-group">
 
                                 <b>
                                     Price Range
@@ -398,7 +404,7 @@ export default function Shop() {
 
                                 ))}
 
-                            </div>
+                            </div> */}
 
                         </aside>
 
@@ -406,23 +412,19 @@ export default function Shop() {
                         {/* PRODUCTS */}
 
                         <div className="product-results">
-
-
-                            {filtered.length > 0 ? (
-
+                            {loading ? (
+                                <div className="empty-products" style={{ padding: "60px 20px" }}>
+                                    <p>Loading authentic remedies...</p>
+                                </div>
+                            ) : filtered.length > 0 ? (
                                 <div className="product-grid">
-
                                     {filtered.map(product => (
-
                                         <ProductCard
-                                            key={product.id}
+                                            key={product._id || product.id}
                                             product={product}
                                         />
-
                                     ))}
-
                                 </div>
-
                             ) : (
 
                                 <div className="empty-products">

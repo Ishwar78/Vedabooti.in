@@ -19,7 +19,6 @@ import {
 import ProductCard from "../../components/ProductCard";
 import SiteHeader from "../../components/SiteHeader";
 import SiteFooter from "../../components/SiteFooter";
-import { homeProducts as defaultHomeProducts } from "../../data/products";
 import api, { getCategoryImageUrl, getVideoUrl, getBannerImageUrl } from "../../lib/api";
 
 import "./Home.css";
@@ -88,7 +87,7 @@ export default function Home() {
     const [categories, setCategories] = useState([]);
 
     // Dynamic Best Selling Products from MongoDB
-    const [products, setProducts] = useState(defaultHomeProducts);
+    const [products, setProducts] = useState([]);
 
     // Dynamic Customer Video Reels from MongoDB
     const [videoReels, setVideoReels] = useState(defaultVideoReels);
@@ -124,8 +123,14 @@ export default function Home() {
         const loadProducts = async () => {
             try {
                 const res = await api.get("/api/products?status=Active");
-                if (isMounted && res && res.products && res.products.length > 0) {
-                    setProducts(res.products.slice(0, 5));
+                if (isMounted) {
+                    if (res && Array.isArray(res.products)) {
+                        setProducts(res.products.slice(0, 5));
+                    } else if (Array.isArray(res)) {
+                        setProducts(res.slice(0, 5));
+                    } else {
+                        setProducts([]);
+                    }
                 }
             } catch (err) {
                 console.error("Failed to load products on Home:", err);
@@ -620,22 +625,23 @@ export default function Home() {
 
 
                     <div className="grid-5">
-
                         {products.map(product => (
-
                             <ProductCard
                                 key={product._id || product.id}
                                 product={product}
                             />
-
                         ))}
-
                     </div>
 
+                    {products.length === 0 && (
+                        <div style={{ padding: "40px 20px", textAlign: "center", color: "#8da497" }}>
+                            <p>Authentic products added by the Admin will appear here.</p>
+                        </div>
+                    )}
                 </section>
 
-
                 {/* ================= FEATURED PRODUCT ================= */}
+                {featuredProduct && (
                 <section className="featured-product-section">
                     <div className="featured-product-inner container">
 
@@ -716,7 +722,7 @@ export default function Home() {
 
                     </div>
                 </section>
-
+                )}
 
                 {/* ================= PROMISE ================= */}
                 <section className="promise">

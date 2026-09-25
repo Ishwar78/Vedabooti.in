@@ -58,18 +58,7 @@ export default function Orders() {
         }
       } catch (err) {
         console.warn("Could not fetch remote orders:", err.message);
-        const stored = JSON.parse(localStorage.getItem("vb_orders") || "[]");
-        const mapped = stored.map((o) => ({
-          orderId: o.orderId,
-          summary:
-            o.items?.map((it) => `${it.name} × ${it.qty || 1}`).join(", ") ||
-            "Ayurvedic Wellness Pack",
-          total: `₹${o.grandTotal}`,
-          status: o.status || "Confirmed",
-          date: o.date || "Recent",
-          raw: o,
-        }));
-        setOrders(mapped);
+        setOrders([]);
       } finally {
         setLoading(false);
       }

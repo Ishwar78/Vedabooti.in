@@ -112,7 +112,7 @@ const ensureDefaultVideos = async () => {
 // Optional query: ?status=Active
 router.get("/", async (req, res) => {
   try {
-    await ensureDefaultVideos();
+    // ensureDefaultVideos disabled
 
     const query = {};
     if (req.query.status) {

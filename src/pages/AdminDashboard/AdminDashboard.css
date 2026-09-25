@@ -1,1 +1,373 @@
- .admin-head{display:flex;justify-content:space-between;align-items:end}.admin-head h1{font-size:42px}.admin-head p{color:#8e9c93}.admin-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:25px 0}.admin-stats>div{position:relative;border:1px solid var(--line);border-radius:12px;background:#091d14;padding:17px}.admin-stats svg{color:var(--gold2);font-size:22px}.admin-stats b,.admin-stats small{display:block}.admin-stats b{font-size:26px}.admin-stats small{color:#8a9890;font-size:9px}.admin-stats em{position:absolute;right:12px;top:15px;color:#5ac46c;font-size:9px;font-style:normal}.admin-panels{display:grid;grid-template-columns:1.4fr .8fr;gap:14px}.admin-panel{border:1px solid var(--line);border-radius:13px;background:#091d14;padding:18px}.panel-title{display:flex;justify-content:space-between;align-items:center}.panel-title h2{font-size:21px}.panel-title a{color:var(--gold2);font-size:10px;display:flex;gap:4px}.recent-order{display:grid;grid-template-columns:.6fr 1.4fr .6fr .7fr;gap:10px;padding:12px 0;border-bottom:1px solid rgba(216,181,106,.1);font-size:10px}.recent-order p{margin:0;color:#9ba8a0;font-size:10px}.recent-order em{font-style:normal;color:#62c473}.progress{margin:22px 0;display:grid;grid-template-columns:1fr auto;gap:6px}.progress span{font-size:10px;color:#aeb9b1}.progress b{font-size:10px;color:var(--gold2)}.progress i{grid-column:1/-1;height:6px;background:#183a27;border-radius:6px;position:relative;overflow:hidden}.progress i:after{content:"";position:absolute;inset:0;background:#4fae51;border-radius:6px}@media(max-width:850px){.admin-stats{grid-template-columns:1fr 1fr}.admin-panels{grid-template-columns:1fr}}@media(max-width:550px){.admin-head{flex-direction:column;align-items:start;gap:12px}.admin-head h1{font-size:35px}.recent-order{grid-template-columns:1fr 1fr}.recent-order p{grid-column:2}}
+.dashboard-page {
+  padding-bottom: 40px;
+}
+
+.admin-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  border-bottom: 1px solid rgba(216, 181, 106, 0.15);
+  padding-bottom: 18px;
+  margin-bottom: 22px;
+}
+
+.admin-head h1 {
+  font-size: 32px;
+  color: #ffffff;
+  margin: 4px 0 6px;
+}
+
+.admin-head p {
+  color: #8e9c93;
+  font-size: 13.5px;
+  margin: 0;
+}
+
+.admin-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dashboard-refresh-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(216, 181, 106, 0.12);
+  border: 1px solid rgba(216, 181, 106, 0.3);
+  color: var(--gold, #d8b56a);
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.dashboard-refresh-btn:hover {
+  background: rgba(216, 181, 106, 0.22);
+  color: #ffffff;
+}
+
+/* 6 Key Stats Grid */
+.admin-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 14px;
+  margin-bottom: 26px;
+}
+
+.admin-stat-card {
+  border: 1px solid rgba(216, 181, 106, 0.2);
+  border-radius: 12px;
+  background: #081d14;
+  padding: 16px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: all 0.2s ease;
+}
+
+.admin-stat-card:hover {
+  border-color: #d8b56a;
+  background: #0a251a;
+  transform: translateY(-2px);
+}
+
+.stat-card-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.icon-orders {
+  background: rgba(216, 181, 106, 0.15);
+  color: #d8b56a;
+}
+
+.icon-revenue {
+  background: rgba(34, 197, 94, 0.15);
+  color: #4ade80;
+}
+
+.icon-products {
+  background: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
+}
+
+.icon-categories {
+  background: rgba(168, 85, 247, 0.15);
+  color: #c084fc;
+}
+
+.icon-users {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+}
+
+.icon-returns {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+}
+
+.stat-card-body b {
+  display: block;
+  font-size: 19px;
+  color: #ffffff;
+  line-height: 1.1;
+}
+
+.stat-card-body small {
+  display: block;
+  color: #8a9890;
+  font-size: 11px;
+  margin-top: 3px;
+}
+
+/* Panels */
+.admin-panels {
+  display: grid;
+  grid-template-columns: 1.4fr 0.8fr;
+  gap: 20px;
+}
+
+.admin-panel {
+  border: 1px solid rgba(216, 181, 106, 0.2);
+  border-radius: 14px;
+  background: #081d14;
+  padding: 20px;
+}
+
+.panel-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(216, 181, 106, 0.12);
+  padding-bottom: 14px;
+  margin-bottom: 16px;
+}
+
+.panel-title h2 {
+  font-size: 18px;
+  color: #ffffff;
+  margin: 0;
+}
+
+.panel-sub {
+  display: block;
+  font-size: 11.5px;
+  color: #8a9890;
+  margin-top: 2px;
+}
+
+.panel-view-all {
+  color: var(--gold, #d8b56a);
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  text-decoration: none;
+  transition: opacity 0.2s;
+}
+
+.panel-view-all:hover {
+  opacity: 0.8;
+}
+
+.panel-loading,
+.panel-empty {
+  padding: 40px 20px;
+  text-align: center;
+  color: #8a9890;
+}
+
+.panel-empty h3 {
+  color: #ffffff;
+  margin: 10px 0 4px;
+  font-size: 16px;
+}
+
+.panel-empty p {
+  font-size: 12.5px;
+  max-width: 340px;
+  margin: 0 auto;
+}
+
+/* Recent Orders Rows */
+.recent-orders-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.recent-order-row {
+  display: grid;
+  grid-template-columns: 1fr 1.6fr 0.7fr 0.9fr;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #05140d;
+  border: 1px solid rgba(216, 181, 106, 0.1);
+  transition: all 0.2s ease;
+}
+
+.recent-order-row:hover {
+  background: #092217;
+  border-color: rgba(216, 181, 106, 0.3);
+}
+
+.order-id-col strong {
+  display: block;
+  font-size: 13px;
+  color: #ffffff;
+}
+
+.order-date-txt {
+  color: #798b80;
+  font-size: 11px;
+}
+
+.cust-name-txt {
+  display: block;
+  color: #edf4ef;
+  font-weight: 600;
+  font-size: 12.5px;
+}
+
+.order-items-preview {
+  margin: 2px 0 0;
+  color: #8da497;
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.order-amt-col b {
+  color: var(--gold2, #f5d78e);
+  font-size: 14px;
+}
+
+/* Side Panels */
+.dashboard-side-panels {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Progress / Health Bars */
+.progress-group {
+  margin-bottom: 16px;
+}
+
+.progress-group:last-child {
+  margin-bottom: 0;
+}
+
+.progress-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.progress-label span {
+  font-size: 12px;
+  color: #c0d1c7;
+}
+
+.progress-label b {
+  font-size: 12px;
+  color: var(--gold, #d8b56a);
+}
+
+.progress-bar-bg {
+  height: 7px;
+  background: #05140d;
+  border: 1px solid rgba(216, 181, 106, 0.15);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: #22c55e;
+  border-radius: 10px;
+  transition: width 0.5s ease;
+}
+
+.progress-bar-fill.gold {
+  background: #d8b56a;
+}
+
+.progress-bar-fill.blue {
+  background: #3b82f6;
+}
+
+/* Shortcuts */
+.shortcuts-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.shortcut-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #05140d;
+  border: 1px solid rgba(216, 181, 106, 0.2);
+  border-radius: 10px;
+  padding: 12px;
+  color: #edf4ef;
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.shortcut-btn svg {
+  color: var(--gold, #d8b56a);
+  font-size: 16px;
+}
+
+.shortcut-btn:hover {
+  background: #d8b56a;
+  color: #061810;
+  border-color: #d8b56a;
+}
+
+.shortcut-btn:hover svg {
+  color: #061810;
+}
+
+@media (max-width: 1100px) {
+  .admin-stats-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .admin-panels {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 650px) {
+  .admin-head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+  }
+  .admin-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .recent-order-row {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+}

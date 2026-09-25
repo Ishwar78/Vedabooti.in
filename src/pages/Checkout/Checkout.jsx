@@ -12,25 +12,6 @@ import {
 } from "../../lib/cartWishlist";
 import "./Checkout.css";
 
-const DEFAULT_COUPONS = [
-  {
-    code: "VEDA10",
-    title: "10% Flat Discount",
-    description: "10% off on all products",
-    discountType: "Percentage",
-    discountValue: 10,
-    minOrder: 0
-  },
-  {
-    code: "AYURVEDA50",
-    title: "Flat ₹50 OFF",
-    description: "Save ₹50 on orders above ₹499",
-    discountType: "Fixed Amount",
-    discountValue: 50,
-    minOrder: 499
-  }
-];
-
 const loadRazorpayScript = () => {
   return new Promise((resolve) => {
     if (typeof window !== "undefined" && window.Razorpay) {
@@ -72,8 +53,8 @@ export default function Checkout() {
     paymentMethod: "online"
   });
 
-  // Coupons State
-  const [availableCoupons, setAvailableCoupons] = useState(DEFAULT_COUPONS);
+  // Coupons State (Strictly loaded from database)
+  const [availableCoupons, setAvailableCoupons] = useState([]);
   const [couponInput, setCouponInput] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [couponError, setCouponError] = useState("");
@@ -99,11 +80,14 @@ export default function Checkout() {
     const fetchCoupons = async () => {
       try {
         const res = await api.get("/api/coupons?active=true");
-        if (res?.success && Array.isArray(res.coupons) && res.coupons.length > 0) {
+        if (res?.success && Array.isArray(res.coupons)) {
           setAvailableCoupons(res.coupons);
+        } else {
+          setAvailableCoupons([]);
         }
       } catch (err) {
-        console.warn("Could not fetch remote coupons, using defaults:", err);
+        console.warn("Could not fetch coupons:", err);
+        setAvailableCoupons([]);
       }
     };
     fetchCoupons();

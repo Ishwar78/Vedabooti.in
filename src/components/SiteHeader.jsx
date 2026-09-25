@@ -6,6 +6,7 @@ import "./SiteHeader.css";
 
 export default function SiteHeader() {
   const [open, setOpen] = useState(false);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [q, setQ] = useState("");
   const [cartCount, setCartCount] = useState(0);
   const [wishlistCount, setWishlistCount] = useState(0);
@@ -39,7 +40,11 @@ export default function SiteHeader() {
 
   const submit = (e) => {
     e.preventDefault();
-    if (q.trim()) navigate(`/search?q=${encodeURIComponent(q.trim())}`);
+    if (q.trim()) {
+      navigate(`/search?q=${encodeURIComponent(q.trim())}`);
+      setMobileSearchOpen(false);
+      setOpen(false);
+    }
   };
 
   return (
@@ -54,25 +59,46 @@ export default function SiteHeader() {
           <Link className="brand" to="/">
             <img src="/assets/veda-booti-logo.png" alt="Veda Booti" />
           </Link>
-          <button className="mobile-menu" onClick={() => setOpen((v) => !v)}>
-            {open ? <FiX /> : <FiMenu />}
-          </button>
-          <nav className={open ? "main-nav open" : "main-nav"}>
-            <Link to="/" onClick={() => setOpen(false)}>Home</Link>
-            <Link to="/shop" onClick={() => setOpen(false)}>Shop</Link>
-            <Link to="/categories" onClick={() => setOpen(false)}>Categories</Link>
-            <Link to="/about" onClick={() => setOpen(false)}>About Us</Link>
-            <Link to="/contact" onClick={() => setOpen(false)}>Contact</Link>
+          <nav className="main-nav desktop-nav">
+            <Link to="/">Home</Link>
+            <Link to="/shop">Shop</Link>
+            <Link to="/categories">Categories</Link>
+            <Link to="/about">About Us</Link>
+            <Link to="/contact">Contact</Link>
           </nav>
-          <form className="search-box" onSubmit={submit}>
-            <FiSearch />
+          <form className="search-box desktop-search" onSubmit={submit}>
+            <button type="submit" className="search-icon-btn" aria-label="Search">
+              <FiSearch />
+            </button>
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="Search for products..."
             />
+            {q && (
+              <button
+                type="button"
+                className="search-clear-btn"
+                onClick={() => setQ("")}
+                aria-label="Clear search"
+              >
+                <FiX />
+              </button>
+            )}
           </form>
           <div className="nav-actions">
+            <button
+              type="button"
+              className="mobile-search-toggle"
+              onClick={() => {
+                setMobileSearchOpen((v) => !v);
+                setOpen(false);
+              }}
+              aria-label="Search"
+              title="Search"
+            >
+              {mobileSearchOpen ? <FiX /> : <FiSearch />}
+            </button>
             <Link
               to={currentUser ? "/user" : "/login"}
               aria-label={currentUser ? "My Account" : "Sign In"}
@@ -104,10 +130,75 @@ export default function SiteHeader() {
               <FiShoppingBag />
               {cartCount > 0 && <b className="cart-count">{cartCount}</b>}
             </Link>
+            {/* Mobile Hamburger Menu button strictly at the far right on mobile, never in center */}
+            <button
+              type="button"
+              className="mobile-menu-btn"
+              onClick={() => {
+                setOpen((v) => !v);
+                setMobileSearchOpen(false);
+              }}
+              aria-label={open ? "Close menu" : "Open menu"}
+              title={open ? "Close menu" : "Open menu"}
+            >
+              {open ? <FiX /> : <FiMenu />}
+            </button>
           </div>
         </div>
+
+        {/* Mobile Navigation Drawer (Opens full width cleanly below the bar) */}
+        {open && (
+          <nav className="mobile-nav-drawer" aria-label="Mobile Navigation">
+            <div className="mobile-nav-links">
+              <Link to="/" onClick={() => setOpen(false)}>
+                <span>Home</span>
+              </Link>
+              <Link to="/shop" onClick={() => setOpen(false)}>
+                <span>Shop</span>
+              </Link>
+              <Link to="/categories" onClick={() => setOpen(false)}>
+                <span>Categories</span>
+              </Link>
+              <Link to="/about" onClick={() => setOpen(false)}>
+                <span>About Us</span>
+              </Link>
+              <Link to="/contact" onClick={() => setOpen(false)}>
+                <span>Contact</span>
+              </Link>
+            </div>
+          </nav>
+        )}
+
+        {/* Mobile Search Drawer (Opens when user clicks search icon in mobile view) */}
+        {mobileSearchOpen && (
+          <form className="mobile-search-bar" onSubmit={submit}>
+            <div className="mobile-search-inner">
+              <FiSearch className="mobile-search-icon" />
+              <input
+                type="search"
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Search authentic Ayurvedic herbs, combos..."
+                autoFocus
+              />
+              {q && (
+                <button
+                  type="button"
+                  className="mobile-search-clear"
+                  onClick={() => setQ("")}
+                  aria-label="Clear search text"
+                >
+                  <FiX />
+                </button>
+              )}
+              <button type="submit" className="mobile-search-go">
+                Search
+              </button>
+            </div>
+          </form>
+        )}
       </header>
-      <div className="header-spacer" />
+      <div className={`header-spacer ${mobileSearchOpen ? "has-search" : ""}`} />
     </>
   );
 }

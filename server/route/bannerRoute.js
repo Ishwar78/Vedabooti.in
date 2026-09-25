@@ -52,21 +52,6 @@ router.get("/", async (req, res) => {
   try {
     let banners = await HeroBanner.find({ status: "Active" }).sort({ order: 1, createdAt: -1 });
 
-    // Seed default banner if none exists
-    if (!banners || banners.length === 0) {
-      const seeded = await HeroBanner.create({
-        title: "BLACK 3X Shaadi Wala Combo",
-        subtitle: "Pure Ayurvedic Care for Peak Vitality & Wellness",
-        desktopImage: "/assets/banner.jpeg",
-        mobileImage: "/assets/banner.jpeg",
-        link: "/shop",
-        buttonText: "Shop Now",
-        order: 1,
-        status: "Active",
-      });
-      banners = [seeded];
-    }
-
     return res.status(200).json({
       success: true,
       count: banners.length,

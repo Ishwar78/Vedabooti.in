@@ -19,7 +19,7 @@ const RETURN_REASONS = [
   "Wrong Item Delivered",
   "Quality Not Satisfactory",
   "Packaging Opened / Torn",
-  "Arrived Late",
+  // "Arrived Late",
   "Other",
 ];
 

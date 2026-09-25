@@ -80,6 +80,7 @@
     margin: 0;
     object-fit: cover;
     max-height: none;
+    padding-top: 25px;
 }
 
 /* Hero Navigation Arrows */
@@ -171,6 +172,7 @@
     .hero-banner-img {
         max-height: none;
         width: 100%;
+        padding-top: 25px;
     }
     .hero-slider-btn {
         opacity: 0.85;

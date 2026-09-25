@@ -18,7 +18,6 @@ import {
 import SiteHeader from "../../components/SiteHeader";
 import SiteFooter from "../../components/SiteFooter";
 import ProductCard from "../../components/ProductCard";
-import { allProducts, getProductBySlug } from "../../data/products";
 import api, { getProductImageUrl } from "../../lib/api";
 import {
     addToCart as addToCartHelper,
@@ -33,40 +32,56 @@ import "./ProductDetail.css";
 
 export default function ProductDetail() {
 
-    const { slug = "ashwagandha-powder" } = useParams();
+    const { slug } = useParams();
     const navigate = useNavigate();
     const location = useLocation();
 
-    const fallbackProduct = getProductBySlug(slug);
     const passedProduct = location.state?.product;
 
     const [dbProduct, setDbProduct] = useState(null);
+    const [relatedProducts, setRelatedProducts] = useState([]);
+    const [loading, setLoading] = useState(!passedProduct);
     const [activeImageIndex, setActiveImageIndex] = useState(0);
 
-    // Fetch product details from MongoDB
+    // Fetch product details & related products from MongoDB
     useEffect(() => {
         let isMounted = true;
-        const fetchProduct = async () => {
+        const fetchProductData = async () => {
+            if (!passedProduct) setLoading(true);
             try {
-                const res = await api.get(`/api/products/${slug}`);
-                if (isMounted && res && res.product) {
-                    setDbProduct(res.product);
+                const [prodRes, allRes] = await Promise.all([
+                    slug ? api.get(`/api/products/${slug}`).catch(() => null) : null,
+                    api.get("/api/products?status=Active").catch(() => null),
+                ]);
+
+                if (isMounted) {
+                    if (prodRes?.product) {
+                        setDbProduct(prodRes.product);
+                    }
+                    if (allRes?.products && Array.isArray(allRes.products)) {
+                        setRelatedProducts(
+                            allRes.products.filter((p) => p.slug !== slug && p._id !== prodRes?.product?._id).slice(0, 4)
+                        );
+                    }
                 }
             } catch (err) {
-                console.warn("Product fetch from API fallback:", err);
+                console.warn("Product fetch from API error:", err);
+            } finally {
+                if (isMounted) setLoading(false);
             }
         };
-        fetchProduct();
+        fetchProductData();
         return () => {
             isMounted = false;
         };
     }, [slug]);
 
-    // Use dbProduct if fetched, else passedProduct, else fallback
-    const rawProduct = dbProduct || passedProduct || fallbackProduct;
+    // Use dbProduct if fetched, else passedProduct
+    const rawProduct = dbProduct || passedProduct || null;
 
     // Extract ALL images uploaded for this product
     const allImages = useMemo(() => {
+        if (!rawProduct) return ["/assets/product1.jpeg"];
         if (rawProduct.images && Array.isArray(rawProduct.images) && rawProduct.images.length > 0) {
             return rawProduct.images;
         }
@@ -82,18 +97,27 @@ export default function ProductDetail() {
     }, [slug, dbProduct]);
 
     // Guarantee default properties so no map/destructure crashes
-    const product = {
-        ...rawProduct,
-        id: rawProduct._id || rawProduct.id,
-        points: rawProduct.points && Array.isArray(rawProduct.points) ? rawProduct.points.filter(p => p && p.trim()) : [],
-        ingredients: rawProduct.ingredients && Array.isArray(rawProduct.ingredients) ? rawProduct.ingredients.filter(i => i && i.trim()) : [],
-        faq: rawProduct.faq && Array.isArray(rawProduct.faq) ? rawProduct.faq.filter(f => f && (f.question?.trim() || f.answer?.trim())) : [],
-        howToUse: rawProduct.howToUse || "",
-        reviews: rawProduct.reviews || "850+",
-        desc: rawProduct.desc || rawProduct.shortDescription || ""
-    };
-
-    const relatedProducts = allProducts.filter(p => p.slug !== slug).slice(0, 4);
+    const product = rawProduct
+        ? {
+              ...rawProduct,
+              id: rawProduct._id || rawProduct.id,
+              points:
+                  rawProduct.points && Array.isArray(rawProduct.points)
+                      ? rawProduct.points.filter((p) => p && p.trim())
+                      : [],
+              ingredients:
+                  rawProduct.ingredients && Array.isArray(rawProduct.ingredients)
+                      ? rawProduct.ingredients.filter((i) => i && i.trim())
+                      : [],
+              faq:
+                  rawProduct.faq && Array.isArray(rawProduct.faq)
+                      ? rawProduct.faq.filter((f) => f && (f.question?.trim() || f.answer?.trim()))
+                      : [],
+              howToUse: rawProduct.howToUse || "",
+              reviews: rawProduct.reviews || "850+",
+              desc: rawProduct.desc || rawProduct.shortDescription || "",
+          }
+        : null;
 
     const [qty, setQty] = useState(1);
     const [tab, setTab] = useState("Description");
@@ -123,7 +147,7 @@ export default function ProductDetail() {
         setLoadingReviews(true);
         try {
             const res = await api.get(
-                `/api/reviews/product/${prodId}?slug=${product.slug || ""}&id=${product._id || product.id || ""}`
+                `/api/reviews/product/${prodId}?slug=${encodeURIComponent(product.slug || "")}&id=${encodeURIComponent(product._id || product.id || "")}&name=${encodeURIComponent(product.name || "")}`
             );
             if (res?.success) {
                 setUserReviews(res.reviews || []);
@@ -246,20 +270,48 @@ export default function ProductDetail() {
     };
 
     const handleWishlistToggle = () => {
+        if (!product) return;
         const res = toggleWishlist(product);
         setWished(res.added);
     };
 
     const discount =
-        Math.round(
-            (1 - product.price / product.old) * 100
-        );
+        product?.old && Number(product.old) > Number(product.price)
+            ? Math.round((1 - product.price / product.old) * 100)
+            : 0;
 
+    if (loading && !product) {
+        return (
+            <div className="detail-page">
+                <SiteHeader />
+                <main className="container" style={{ padding: "100px 20px", textAlign: "center", color: "#8da497" }}>
+                    <p>Loading authentic product details...</p>
+                </main>
+                <SiteFooter />
+            </div>
+        );
+    }
+
+    if (!product) {
+        return (
+            <div className="detail-page">
+                <SiteHeader />
+                <main className="container" style={{ padding: "100px 20px", textAlign: "center", color: "#8da497" }}>
+                    <h2 style={{ color: "#ffffff", marginBottom: "12px" }}>Product Not Found</h2>
+                    <p style={{ maxWidth: "460px", margin: "0 auto 24px" }}>
+                        The requested Ayurvedic remedy does not exist or may have been updated.
+                    </p>
+                    <Link to="/shop" className="btn">
+                        Browse All Products
+                    </Link>
+                </main>
+                <SiteFooter />
+            </div>
+        );
+    }
 
     return (
-
         <div className="detail-page">
-
             <SiteHeader />
 
 
@@ -1003,48 +1055,35 @@ export default function ProductDetail() {
 
 
                 {/* ================= RELATED ================= */}
-
+                {relatedProducts.length > 0 && (
                 <section className="related">
-
                     <div className="section-head">
-
                         <div>
-
                             <span className="eyebrow">
                                 Complete Your Ritual
                             </span>
-
                             <h2>
                                 You May Also Like
                             </h2>
-
                         </div>
-
-
                         <Link
                             className="btn dark"
                             to="/shop"
                         >
                             View All Products
                         </Link>
-
                     </div>
-
 
                     <div className="grid-4">
-
                         {relatedProducts.map(item => (
-
                             <ProductCard
                                 product={item}
-                                key={item.id}
+                                key={item._id || item.id}
                             />
-
                         ))}
-
                     </div>
-
                 </section>
+                )}
 
             </main>
 

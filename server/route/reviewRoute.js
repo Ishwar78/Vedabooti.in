@@ -2,6 +2,7 @@ import express from "express";
 import jwt from "jsonwebtoken";
 import Review from "../module/Review.js";
 import Order from "../module/Order.js";
+import Product from "../module/Product.js";
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || "vedabooti_user_jwt_secret_token_2026";
@@ -24,15 +25,19 @@ const extractUser = (req) => {
 router.get("/product/:identifier", async (req, res) => {
   try {
     const { identifier } = req.params;
-    const { slug, id } = req.query;
+    const { slug, id, name } = req.query;
 
     const identifiers = [identifier, slug, id].filter(Boolean);
+    const orConditions = [
+      { productId: { $in: identifiers } },
+      { productSlug: { $in: identifiers } },
+    ];
+    if (name && name.trim()) {
+      orConditions.push({ productName: new RegExp(`^${name.trim()}$`, "i") });
+    }
 
     const reviews = await Review.find({
-      $or: [
-        { productId: { $in: identifiers } },
-        { productSlug: { $in: identifiers } },
-      ],
+      $or: orConditions,
       status: "Approved",
     }).sort({ createdAt: -1 });
 
@@ -256,7 +261,105 @@ router.post("/", async (req, res) => {
 });
 
 /* =========================================================
-   4. ADMIN: GET ALL REVIEWS
+   4. ADMIN: CREATE REVIEW (Admin can add any number of reviews to any product)
+========================================================= */
+router.post("/admin", async (req, res) => {
+  try {
+    const {
+      productId,
+      productSlug,
+      productName,
+      productImage,
+      userName,
+      userEmail,
+      rating,
+      comment,
+      isVerifiedBuyer = true,
+      status = "Approved",
+      createdAt,
+    } = req.body;
+
+    if (!productId && !productSlug && !productName) {
+      return res.status(400).json({
+        success: false,
+        message: "Please select a product for this review.",
+      });
+    }
+
+    if (!userName || !userName.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Customer name is required.",
+      });
+    }
+
+    if (!rating || Number(rating) < 1 || Number(rating) > 5) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide a valid rating between 1 and 5.",
+      });
+    }
+
+    if (!comment || !comment.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Review comment is required.",
+      });
+    }
+
+    // Try to resolve product details from DB
+    let resolvedProduct = null;
+    if (productId) {
+      resolvedProduct = await Product.findById(productId).catch(() => null);
+    }
+    if (!resolvedProduct && productSlug) {
+      resolvedProduct = await Product.findOne({ slug: productSlug }).catch(() => null);
+    }
+    if (!resolvedProduct && productName) {
+      resolvedProduct = await Product.findOne({ name: new RegExp(`^${productName.trim()}$`, "i") }).catch(() => null);
+    }
+
+    const finalProductId = resolvedProduct ? String(resolvedProduct._id) : (productId || productSlug || "");
+    const finalProductSlug = resolvedProduct ? (resolvedProduct.slug || "") : (productSlug || "");
+    const finalProductName = resolvedProduct ? resolvedProduct.name : (productName || "Ayurvedic Product");
+    const finalProductImage = resolvedProduct
+      ? ((resolvedProduct.images && resolvedProduct.images[0]) || resolvedProduct.image || "")
+      : (productImage || "");
+
+    const newReview = new Review({
+      productId: finalProductId,
+      productSlug: finalProductSlug,
+      productName: finalProductName,
+      productImage: finalProductImage,
+      userName: userName.trim(),
+      userEmail: userEmail ? userEmail.trim().toLowerCase() : "",
+      rating: Number(rating),
+      comment: comment.trim(),
+      isVerifiedBuyer: isVerifiedBuyer !== false,
+      status: status || "Approved",
+      createdBy: "Admin",
+      ...(createdAt ? { createdAt: new Date(createdAt) } : {}),
+    });
+
+    await newReview.save();
+
+    return res.status(201).json({
+      success: true,
+      message: "Review created and published successfully by Admin.",
+      review: newReview,
+    });
+  } catch (error) {
+    console.error("[Review API] Admin create review error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to create review.",
+      error: error.message,
+    });
+  }
+});
+
+/* =========================================================
+   5. ADMIN: GET ALL REVIEWS
 ========================================================= */
 router.get("/admin", async (req, res) => {
   try {

@@ -24,7 +24,8 @@ const reviewSchema = new mongoose.Schema(
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true,
+      required: false,
+      default: null,
     },
     userName: {
       type: String,
@@ -33,9 +34,15 @@ const reviewSchema = new mongoose.Schema(
     },
     userEmail: {
       type: String,
-      required: true,
+      required: false,
+      default: "",
       lowercase: true,
       trim: true,
+    },
+    createdBy: {
+      type: String,
+      enum: ["Customer", "Admin"],
+      default: "Customer",
     },
     rating: {
       type: Number,

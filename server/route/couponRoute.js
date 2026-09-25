@@ -3,63 +3,11 @@ import Coupon from "../module/Coupon.js";
 
 const router = express.Router();
 
-const defaultCoupons = [
-  {
-    code: "WELCOME10",
-    title: "10% Welcome Discount",
-    description: "Enjoy 10% off on your entire purchase",
-    discountType: "Percentage",
-    discountValue: 10,
-    minOrder: 0,
-    status: "Active",
-  },
-  {
-    code: "AYURVEDA50",
-    title: "Flat ₹50 OFF",
-    description: "Save ₹50 on orders above ₹499",
-    discountType: "Fixed Amount",
-    discountValue: 50,
-    minOrder: 499,
-    status: "Active",
-  },
-  {
-    code: "FIRSTBUY",
-    title: "15% Special Welcome",
-    description: "15% off for first-time wellness buyers",
-    discountType: "Percentage",
-    discountValue: 15,
-    minOrder: 0,
-    status: "Active",
-  },
-  {
-    code: "GOLD500",
-    title: "Flat ₹500 Mega Saving",
-    description: "Save ₹500 on premium orders above ₹2,000",
-    discountType: "Fixed Amount",
-    discountValue: 50,
-    minOrder: 2000,
-    status: "Active",
-  },
-];
-
-const ensureDefaultCoupons = async () => {
-  try {
-    const count = await Coupon.countDocuments();
-    if (count === 0) {
-      await Coupon.insertMany(defaultCoupons);
-      console.log("[Coupon API] Seeded 4 default coupons into database.");
-    }
-  } catch (err) {
-    console.error("[Coupon API] Error seeding coupons:", err.message);
-  }
-};
-
 /* =========================================================
    1. GET ALL COUPONS (Optional: ?active=true, ?search=...)
 ========================================================= */
 router.get("/", async (req, res) => {
   try {
-    await ensureDefaultCoupons();
 
     const { active, search, status } = req.query;
     const filter = {};
