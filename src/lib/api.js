@@ -34,6 +34,15 @@ export const getProductImageUrl = (src) => {
   return src;
 };
 
+export const getBannerImageUrl = (src) => {
+  if (!src) return "/assets/banner.jpeg";
+  if (src.startsWith("http://") || src.startsWith("https://")) return src;
+  if (src.startsWith("/uploads/")) {
+    return `${API_BASE_URL}${src}`;
+  }
+  return src;
+};
+
 async function request(path, options = {}) {
   const cleanPath = path.startsWith("/") ? path : `/${path}`;
   const url = `${API_BASE_URL}${cleanPath}`;

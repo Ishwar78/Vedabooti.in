@@ -16,6 +16,8 @@ import couponRoute from "./route/couponRoute.js";
 import paymentRoute from "./route/paymentRoute.js";
 import supportRoute from "./route/supportRoute.js";
 import reviewRoute from "./route/reviewRoute.js";
+import returnRoute from "./route/returnRoute.js";
+import bannerRoute from "./route/bannerRoute.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -67,6 +69,12 @@ app.use("/support", supportRoute);
 
 app.use("/api/reviews", reviewRoute);
 app.use("/reviews", reviewRoute);
+
+app.use("/api/returns", returnRoute);
+app.use("/returns", returnRoute);
+
+app.use("/api/banners", bannerRoute);
+app.use("/banners", bannerRoute);
 
 // Root health check
 app.get("/", (req, res) => {

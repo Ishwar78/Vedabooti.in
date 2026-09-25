@@ -28,7 +28,7 @@
 
 .home-hero-slider {
     width: 100%;
-    background: #030d08;
+    background: transparent;
     border-bottom: 1px solid var(--line);
     position: relative;
     overflow: hidden;
@@ -67,13 +67,19 @@
     opacity: 0.98;
 }
 
+.hero-banner-picture {
+    display: block;
+    width: 100%;
+    line-height: 0;
+}
+
 .hero-banner-img {
     width: 100%;
     height: auto;
     display: block;
-    margin: 0 auto;
-    object-fit: contain;
-    max-height: 520px;
+    margin: 0;
+    object-fit: cover;
+    max-height: none;
 }
 
 /* Hero Navigation Arrows */
@@ -159,12 +165,6 @@
     border-radius: 12px;
     background: var(--gold2);
     box-shadow: 0 0 10px rgba(241, 211, 141, 0.7);
-}
-
-@media (min-width: 1600px) {
-    .hero-banner-img {
-        max-height: 580px;
-    }
 }
 
 @media (max-width: 768px) {

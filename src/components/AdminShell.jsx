@@ -35,7 +35,7 @@ export default function AdminShell({ children }) {
 
     
     ["/admin/contact", "Contact", FiMail],
-    ["/admin/inquiry", "Inquiry", FiMessageCircle],
+    // ["/admin/inquiry", "Inquiry", FiMessageCircle],
     ["/admin/users", "Users", FiUsers],
     ["/admin/reviews", "Reviews", FiStar],
     ["/admin/create-review", "Create Review", FiEdit3],

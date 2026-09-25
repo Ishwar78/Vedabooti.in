@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import UserShell from "../../components/UserShell";
-import { FiPackage, FiChevronRight, FiRefreshCw, FiShoppingBag, FiPrinter } from "react-icons/fi";
+import { FiPackage, FiChevronRight, FiRefreshCw, FiShoppingBag, FiPrinter, FiRotateCcw } from "react-icons/fi";
 import api from "../../lib/api";
 import InvoiceModal from "../../components/InvoiceModal";
+import ReturnRequestModal from "../../components/ReturnRequestModal";
 import "./Orders.css";
 
 export default function Orders() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [invoiceOrder, setInvoiceOrder] = useState(null);
+  const [returnOrder, setReturnOrder] = useState(null);
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -124,6 +126,16 @@ export default function Orders() {
                   ● {o.status}
                 </span>
                 <div className="order-row-actions">
+                  {o.status === "Delivered" && (
+                    <button
+                      type="button"
+                      className="order-return-btn"
+                      title="Request Product Return / Refund"
+                      onClick={() => setReturnOrder(o.raw)}
+                    >
+                      <FiRotateCcw /> Return
+                    </button>
+                  )}
                   <button
                     type="button"
                     className="order-invoice-btn"
@@ -151,6 +163,42 @@ export default function Orders() {
           <InvoiceModal
             order={invoiceOrder}
             onClose={() => setInvoiceOrder(null)}
+          />
+        )}
+
+        {/* Return Request Modal */}
+        {returnOrder && (
+          <ReturnRequestModal
+            order={returnOrder}
+            onClose={() => setReturnOrder(null)}
+            onSuccess={() => {
+              // Refresh orders list
+              const token = localStorage.getItem("token") || localStorage.getItem("userToken");
+              if (token) {
+                api.get("/api/orders/my-orders").then((res) => {
+                  if (res?.success && Array.isArray(res.orders)) {
+                    setOrders(
+                      res.orders.map((o) => ({
+                        orderId: o.orderId,
+                        summary:
+                          o.items?.map((it) => `${it.name} × ${it.qty || 1}`).join(", ") ||
+                          "Ayurvedic Wellness Pack",
+                        total: `₹${o.grandTotal}`,
+                        status: o.status || "Confirmed",
+                        date: o.createdAt
+                          ? new Date(o.createdAt).toLocaleDateString("en-IN", {
+                              day: "2-digit",
+                              month: "short",
+                              year: "numeric",
+                            })
+                          : "Recent",
+                        raw: o,
+                      }))
+                    );
+                  }
+                });
+              }
+            }}
           />
         )}
       </div>

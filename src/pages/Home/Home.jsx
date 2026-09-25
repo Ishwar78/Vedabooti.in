@@ -20,7 +20,7 @@ import ProductCard from "../../components/ProductCard";
 import SiteHeader from "../../components/SiteHeader";
 import SiteFooter from "../../components/SiteFooter";
 import { homeProducts as defaultHomeProducts } from "../../data/products";
-import api, { getCategoryImageUrl, getVideoUrl } from "../../lib/api";
+import api, { getCategoryImageUrl, getVideoUrl, getBannerImageUrl } from "../../lib/api";
 
 import "./Home.css";
 
@@ -93,6 +93,17 @@ export default function Home() {
     // Dynamic Customer Video Reels from MongoDB
     const [videoReels, setVideoReels] = useState(defaultVideoReels);
 
+    // Dynamic Hero Banners from MongoDB
+    const [heroBanners, setHeroBanners] = useState([
+        {
+            _id: "default-banner-1",
+            title: "Veda Booti - BLACK 3X Shaadi Wala",
+            desktopImage: "/assets/banner.jpeg",
+            mobileImage: "/assets/banner.jpeg",
+            link: "/shop"
+        }
+    ]);
+
     useEffect(() => {
         let isMounted = true;
         const loadCategories = async () => {
@@ -132,9 +143,21 @@ export default function Home() {
             }
         };
 
+        const loadBanners = async () => {
+            try {
+                const res = await api.get("/api/banners");
+                if (isMounted && res?.banners?.length > 0) {
+                    setHeroBanners(res.banners);
+                }
+            } catch (err) {
+                console.error("Failed to load hero banners on Home:", err);
+            }
+        };
+
         loadCategories();
         loadProducts();
         loadVideos();
+        loadBanners();
 
         return () => {
             isMounted = false;
@@ -146,21 +169,21 @@ export default function Home() {
     const [isHeroHovered, setIsHeroHovered] = useState(false);
     const [heroTouchStartX, setHeroTouchStartX] = useState(null);
 
-    // Auto-advance hero slides every 4 seconds
+    // Auto-advance hero slides every 4.5 seconds
     useEffect(() => {
-        if (isHeroHovered) return;
+        if (isHeroHovered || heroBanners.length <= 1) return;
         const timer = setInterval(() => {
-            setHeroSlide((prev) => (prev < heroSlides.length - 1 ? prev + 1 : 0));
-        }, 4000);
+            setHeroSlide((prev) => (prev < heroBanners.length - 1 ? prev + 1 : 0));
+        }, 4500);
         return () => clearInterval(timer);
-    }, [heroSlide, isHeroHovered]);
+    }, [heroSlide, isHeroHovered, heroBanners.length]);
 
     const prevHeroSlide = () => {
-        setHeroSlide((prev) => (prev > 0 ? prev - 1 : heroSlides.length - 1));
+        setHeroSlide((prev) => (prev > 0 ? prev - 1 : heroBanners.length - 1));
     };
 
     const nextHeroSlide = () => {
-        setHeroSlide((prev) => (prev < heroSlides.length - 1 ? prev + 1 : 0));
+        setHeroSlide((prev) => (prev < heroBanners.length - 1 ? prev + 1 : 0));
     };
 
     const handleHeroTouchStart = (e) => {
@@ -326,14 +349,16 @@ export default function Home() {
                     onTouchEnd={handleHeroTouchEnd}
                 >
                     {/* Navigation Prev Button */}
-                    <button
-                        type="button"
-                        className="hero-slider-btn prev"
-                        onClick={prevHeroSlide}
-                        aria-label="Previous banner"
-                    >
-                        <FiChevronLeft />
-                    </button>
+                    {heroBanners.length > 1 && (
+                        <button
+                            type="button"
+                            className="hero-slider-btn prev"
+                            onClick={prevHeroSlide}
+                            aria-label="Previous banner"
+                        >
+                            <FiChevronLeft />
+                        </button>
+                    )}
 
                     {/* Viewport & Slide Track */}
                     <div className="hero-slider-viewport">
@@ -341,47 +366,64 @@ export default function Home() {
                             className="hero-slider-track"
                             style={{ transform: `translateX(-${heroSlide * 100}%)` }}
                         >
-                            {heroSlides.map((slide, idx) => (
-                                <div key={slide.id} className="hero-slide-item">
-                                    <Link
-                                        to={slide.link}
-                                        className="hero-banner-link"
-                                        title="Shop Veda Booti BLACK 3X Shaadi Wala Combo"
-                                        aria-label={`Banner slide ${idx + 1}`}
-                                    >
-                                        <img
-                                            src={slide.image}
-                                            alt={slide.alt}
-                                            className="hero-banner-img"
-                                        />
-                                    </Link>
-                                </div>
-                            ))}
+                            {heroBanners.map((slide, idx) => {
+                                const desktopImg = getBannerImageUrl(slide.desktopImage || slide.image);
+                                const mobileImg = slide.mobileImage
+                                    ? getBannerImageUrl(slide.mobileImage)
+                                    : desktopImg;
+
+                                return (
+                                    <div key={slide._id || slide.id || idx} className="hero-slide-item">
+                                        <Link
+                                            to={slide.link || "/shop"}
+                                            className="hero-banner-link"
+                                            title={slide.title || "Shop Veda Booti"}
+                                            aria-label={`Banner slide ${idx + 1}`}
+                                        >
+                                            <picture className="hero-banner-picture">
+                                                {mobileImg && mobileImg !== desktopImg && (
+                                                    <source media="(max-width: 768px)" srcSet={mobileImg} />
+                                                )}
+                                                <img
+                                                    src={desktopImg}
+                                                    alt={slide.title || `Banner slide ${idx + 1}`}
+                                                    className="hero-banner-img"
+                                                    loading={idx === 0 ? "eager" : "lazy"}
+                                                />
+                                            </picture>
+                                        </Link>
+                                    </div>
+                                );
+                            })}
                         </div>
                     </div>
 
                     {/* Navigation Next Button */}
-                    <button
-                        type="button"
-                        className="hero-slider-btn next"
-                        onClick={nextHeroSlide}
-                        aria-label="Next banner"
-                    >
-                        <FiChevronRight />
-                    </button>
+                    {heroBanners.length > 1 && (
+                        <button
+                            type="button"
+                            className="hero-slider-btn next"
+                            onClick={nextHeroSlide}
+                            aria-label="Next banner"
+                        >
+                            <FiChevronRight />
+                        </button>
+                    )}
 
                     {/* Dot Indicators */}
-                    <div className="hero-slider-dots">
-                        {heroSlides.map((_, idx) => (
-                            <button
-                                key={idx}
-                                type="button"
-                                className={`hero-dot ${idx === heroSlide ? "active" : ""}`}
-                                onClick={() => setHeroSlide(idx)}
-                                aria-label={`Go to banner slide ${idx + 1}`}
-                            />
-                        ))}
-                    </div>
+                    {heroBanners.length > 1 && (
+                        <div className="hero-slider-dots">
+                            {heroBanners.map((_, idx) => (
+                                <button
+                                    key={idx}
+                                    type="button"
+                                    className={`hero-dot ${idx === heroSlide ? "active" : ""}`}
+                                    onClick={() => setHeroSlide(idx)}
+                                    aria-label={`Go to banner slide ${idx + 1}`}
+                                />
+                            ))}
+                        </div>
+                    )}
                 </section>
 
                 {/* ================= CATEGORIES ================= */}

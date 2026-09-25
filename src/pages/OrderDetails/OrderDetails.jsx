@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import UserShell from "../../components/UserShell";
-import { FiArrowLeft, FiCheckCircle, FiPackage, FiMapPin, FiPrinter } from "react-icons/fi";
+import { FiArrowLeft, FiCheckCircle, FiPackage, FiMapPin, FiPrinter, FiRotateCcw } from "react-icons/fi";
 import api from "../../lib/api";
 import InvoiceModal from "../../components/InvoiceModal";
+import ReturnRequestModal from "../../components/ReturnRequestModal";
 import "./OrderDetails.css";
 
 export default function OrderDetails() {
@@ -11,6 +12,7 @@ export default function OrderDetails() {
   const [order, setOrder] = useState(location.state?.order || null);
   const [loading, setLoading] = useState(!order);
   const [showInvoice, setShowInvoice] = useState(false);
+  const [showReturnModal, setShowReturnModal] = useState(false);
 
   useEffect(() => {
     if (order) return;
@@ -96,6 +98,16 @@ export default function OrderDetails() {
             </p>
           </div>
           <div className="order-details-head-actions">
+            {status === "Delivered" && (
+              <button
+                type="button"
+                className="btn-details-return"
+                onClick={() => setShowReturnModal(true)}
+                title="Request Return or Refund for this Order"
+              >
+                <FiRotateCcw /> Return / Refund
+              </button>
+            )}
             <button
               type="button"
               className="btn-details-invoice"
@@ -181,6 +193,17 @@ export default function OrderDetails() {
           <InvoiceModal
             order={order}
             onClose={() => setShowInvoice(false)}
+          />
+        )}
+
+        {/* Return Request Modal */}
+        {showReturnModal && (
+          <ReturnRequestModal
+            order={order}
+            onClose={() => setShowReturnModal(false)}
+            onSuccess={() => {
+              // Could refresh order status
+            }}
           />
         )}
       </div>
