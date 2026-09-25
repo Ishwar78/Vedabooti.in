@@ -18,6 +18,7 @@ import Cart from "./pages/Cart/Cart";
 import Wishlist from "./pages/Wishlist/Wishlist";
 import Checkout from "./pages/Checkout/Checkout";
 import ThankYou from "./pages/ThankYou/ThankYou";
+import Invoice from "./pages/Invoice/Invoice";
 
 import ShippingPolicy from "./pages/ShippingPolicy/ShippingPolicy";
 import PrivacyPolicy from "./pages/PrivacyPolicy/PrivacyPolicy";
@@ -122,6 +123,11 @@ export default function App() {
                 <Route
                     path="/thank-you"
                     element={<ThankYou />}
+                />
+
+                <Route
+                    path="/invoice/:orderId"
+                    element={<Invoice />}
                 />
 
                 <Route 

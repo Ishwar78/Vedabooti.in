@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import UserShell from "../../components/UserShell";
-import { FiPackage, FiChevronRight, FiRefreshCw, FiShoppingBag } from "react-icons/fi";
+import { FiPackage, FiChevronRight, FiRefreshCw, FiShoppingBag, FiPrinter } from "react-icons/fi";
 import api from "../../lib/api";
+import InvoiceModal from "../../components/InvoiceModal";
 import "./Orders.css";
 
 export default function Orders() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [invoiceOrder, setInvoiceOrder] = useState(null);
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -121,17 +123,35 @@ export default function Orders() {
                 <span className={`order-status-badge ${o.status.toLowerCase()}`}>
                   ● {o.status}
                 </span>
-                <Link
-                  to="/order-details"
-                  state={{ order: o.raw }}
-                  className="order-view-link"
-                >
-                  <span>View Details</span>
-                  <FiChevronRight />
-                </Link>
+                <div className="order-row-actions">
+                  <button
+                    type="button"
+                    className="order-invoice-btn"
+                    title="View / Print Tax Invoice"
+                    onClick={() => setInvoiceOrder(o.raw)}
+                  >
+                    <FiPrinter /> Bill
+                  </button>
+                  <Link
+                    to="/order-details"
+                    state={{ order: o.raw }}
+                    className="order-view-link"
+                  >
+                    <span>Details</span>
+                    <FiChevronRight />
+                  </Link>
+                </div>
               </article>
             ))}
           </div>
+        )}
+
+        {/* Invoice Modal */}
+        {invoiceOrder && (
+          <InvoiceModal
+            order={invoiceOrder}
+            onClose={() => setInvoiceOrder(null)}
+          />
         )}
       </div>
     </UserShell>

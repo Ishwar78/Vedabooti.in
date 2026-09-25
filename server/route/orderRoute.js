@@ -1,5 +1,6 @@
 import express from "express";
 import jwt from "jsonwebtoken";
+import mongoose from "mongoose";
 import Order from "../module/Order.js";
 
 const router = express.Router();
@@ -187,5 +188,27 @@ const updateOrderStatusHandler = async (req, res) => {
 router.patch("/:id/status", updateOrderStatusHandler);
 router.put("/:id/status", updateOrderStatusHandler);
 router.post("/:id/status", updateOrderStatusHandler);
+
+/* =========================================================
+   5. GET SINGLE ORDER (By MongoDB _id or orderId)
+========================================================= */
+router.get("/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    let order = null;
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      order = await Order.findById(id);
+    }
+    if (!order) {
+      order = await Order.findOne({ orderId: id });
+    }
+    if (!order) {
+      return res.status(404).json({ success: false, message: "Order not found." });
+    }
+    return res.status(200).json({ success: true, order });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+});
 
 export default router;

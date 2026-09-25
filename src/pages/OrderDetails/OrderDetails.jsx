@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import UserShell from "../../components/UserShell";
-import { FiArrowLeft, FiCheckCircle, FiPackage, FiMapPin } from "react-icons/fi";
+import { FiArrowLeft, FiCheckCircle, FiPackage, FiMapPin, FiPrinter } from "react-icons/fi";
 import api from "../../lib/api";
+import InvoiceModal from "../../components/InvoiceModal";
 import "./OrderDetails.css";
 
 export default function OrderDetails() {
   const location = useLocation();
   const [order, setOrder] = useState(location.state?.order || null);
   const [loading, setLoading] = useState(!order);
+  const [showInvoice, setShowInvoice] = useState(false);
 
   useEffect(() => {
     if (order) return;
@@ -93,9 +95,19 @@ export default function OrderDetails() {
               Placed on {dateStr}
             </p>
           </div>
-          <span className={`status-badge ${(status || "").toLowerCase()}`}>
-            <FiCheckCircle /> {status}
-          </span>
+          <div className="order-details-head-actions">
+            <button
+              type="button"
+              className="btn-details-invoice"
+              onClick={() => setShowInvoice(true)}
+              title="Download or Print Tax Invoice"
+            >
+              <FiPrinter /> Download Bill / Invoice
+            </button>
+            <span className={`status-badge ${(status || "").toLowerCase()}`}>
+              <FiCheckCircle /> {status}
+            </span>
+          </div>
         </div>
 
         <div className="order-detail-card">
@@ -163,6 +175,14 @@ export default function OrderDetails() {
             </div>
           )}
         </div>
+
+        {/* Invoice Modal */}
+        {showInvoice && (
+          <InvoiceModal
+            order={order}
+            onClose={() => setShowInvoice(false)}
+          />
+        )}
       </div>
     </UserShell>
   );

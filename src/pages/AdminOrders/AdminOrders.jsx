@@ -12,9 +12,12 @@ import {
   FiMapPin,
   FiPhone,
   FiMail,
-  FiTag
+  FiTag,
+  FiPrinter,
+  FiFileText
 } from "react-icons/fi";
 import api from "../../lib/api";
+import InvoiceModal from "../../components/InvoiceModal";
 import "./AdminOrders.css";
 
 const STATUS_OPTIONS = ["Confirmed", "Processing", "Shipped", "Delivered", "Cancelled"];
@@ -27,6 +30,7 @@ export default function AdminOrders() {
 
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [invoiceOrder, setInvoiceOrder] = useState(null);
 
   const fetchOrders = async () => {
     setLoading(true);
@@ -246,6 +250,14 @@ export default function AdminOrders() {
                 <div className="row-actions">
                   <button
                     type="button"
+                    className="btn-table-bill"
+                    title="Generate / Print Tax Invoice"
+                    onClick={() => setInvoiceOrder(order)}
+                  >
+                    <FiPrinter /> Bill
+                  </button>
+                  <button
+                    type="button"
                     title="View Full Details"
                     onClick={() => setSelectedOrder(order)}
                   >
@@ -385,10 +397,28 @@ export default function AdminOrders() {
                       ₹{selectedOrder.grandTotal}
                     </strong>
                   </div>
+
+                  <div className="modal-invoice-action-strip">
+                    <button
+                      type="button"
+                      className="btn-modal-bill"
+                      onClick={() => setInvoiceOrder(selectedOrder)}
+                    >
+                      <FiPrinter /> Generate & Print Tax Invoice
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
+        )}
+
+        {/* Invoice Modal */}
+        {invoiceOrder && (
+          <InvoiceModal
+            order={invoiceOrder}
+            onClose={() => setInvoiceOrder(null)}
+          />
         )}
       </div>
     </AdminShell>
