@@ -138,7 +138,7 @@ export default function InvoiceModal({ order, onClose }) {
                   Registered Office: Veda Booti Wellness Centre, Opp. Green Enclave, New Delhi - 110001
                 </p>
                 <p className="inv-contact-line">
-                  <span>Helpline: +91 99999 99999</span> | <span>Email: support@vedabooti.com</span> |{" "}
+                  <span>Helpline: +91 99999 99999</span> | <span>Email: vedabooti1@gmail.com</span> |{" "}
                   <span>Web: www.vedabooti.in</span>
                 </p>
                 <p className="inv-tax-details">
@@ -312,7 +312,7 @@ export default function InvoiceModal({ order, onClose }) {
                 <ol>
                   <li>Goods once sold are covered under our 7-day herbal quality guarantee.</li>
                   <li>Store products in a cool, dry place away from direct sunlight.</li>
-                  <li>For support or queries, contact us at <b>support@vedabooti.com</b>.</li>
+                  <li>For support or queries, contact us at <b>vedabooti1@gmail.com</b>.</li>
                 </ol>
               </div>
             </div>

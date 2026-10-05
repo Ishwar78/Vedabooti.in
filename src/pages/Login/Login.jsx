@@ -141,6 +141,9 @@ export default function Login() {
 
   return (
     <main className="auth-page">
+        <Link to="/" className="auth-back-btn">
+    ← Back to Home
+  </Link>
       {/* ================= LEFT ART ================= */}
       <div className="auth-art">
         <Link to="/" title="Go to Home">

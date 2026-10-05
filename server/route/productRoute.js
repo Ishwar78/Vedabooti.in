@@ -109,8 +109,6 @@ router.get("/", async (req, res) => {
 // 2. GET SINGLE PRODUCT BY SLUG OR ID
 router.get("/:slugOrId", async (req, res) => {
   try {
-    await ensureDefaultProducts();
-
     const { slugOrId } = req.params;
     let product = null;
 
@@ -311,10 +309,22 @@ router.put("/:id", (req, res, next) => {
       existingImages,
     } = req.body;
 
-    if (name && name.trim()) product.name = name.trim();
+    if (name && name.trim()) {
+      const newName = name.trim();
+      if (newName !== product.name) {
+        product.name = newName;
+        let baseSlug = slugify(newName);
+        let finalSlug = baseSlug;
+        let count = 1;
+        while (await Product.findOne({ slug: finalSlug, _id: { $ne: product._id } })) {
+          finalSlug = `${baseSlug}-${count++}`;
+        }
+        product.slug = finalSlug;
+      }
+    }
     if (category && category.trim()) product.category = category.trim();
-    if (price !== undefined) product.price = Number(price);
-    if (oldPrice !== undefined) product.oldPrice = Number(oldPrice);
+    if (price !== undefined && price !== "") product.price = Number(price);
+    if (oldPrice !== undefined) product.oldPrice = oldPrice !== "" ? Number(oldPrice) : 0;
     if (discount !== undefined) product.discount = discount;
     if (discountType !== undefined) product.discountType = discountType;
     if (shortDescription !== undefined) product.shortDescription = shortDescription.trim();
@@ -322,7 +332,7 @@ router.put("/:id", (req, res, next) => {
     if (subtitle !== undefined) product.subtitle = subtitle.trim();
     if (tag !== undefined) product.tag = tag;
     if (short !== undefined) product.short = short;
-    if (stock !== undefined) product.stock = Number(stock);
+    if (stock !== undefined && stock !== "") product.stock = Number(stock);
     if (unit !== undefined) product.unit = unit;
     if (req.body.weight !== undefined) product.weight = req.body.weight;
     if (status !== undefined) product.status = status;
@@ -330,20 +340,20 @@ router.put("/:id", (req, res, next) => {
     if (metaDescription !== undefined) product.metaDescription = metaDescription;
     if (metaTags !== undefined) product.metaTags = metaTags;
 
-    if (req.body.benefits || req.body.points) {
+    if (req.body.benefits !== undefined || req.body.points !== undefined) {
       product.points = parseArray(req.body.benefits || req.body.points);
     }
-    if (req.body.ingredients) {
+    if (req.body.ingredients !== undefined) {
       product.ingredients = parseArray(req.body.ingredients);
     }
     if (req.body.howToUse !== undefined) {
       product.howToUse = req.body.howToUse;
     }
-    if (req.body.faq) {
+    if (req.body.faq !== undefined) {
       try {
         product.faq = typeof req.body.faq === "string" ? JSON.parse(req.body.faq) : req.body.faq;
       } catch {
-        // ignore malformed faq
+        product.faq = [];
       }
     }
 
@@ -355,6 +365,9 @@ router.put("/:id", (req, res, next) => {
     if (mergedImages.length > 0) {
       product.images = mergedImages;
       product.image = mergedImages[0];
+    } else if (existingImages !== undefined) {
+      product.images = ["/assets/product1.jpeg"];
+      product.image = "/assets/product1.jpeg";
     }
 
     const updated = await product.save();

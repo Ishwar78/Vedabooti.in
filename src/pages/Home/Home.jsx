@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
     FiArrowRight,
     FiPlay,
@@ -13,13 +13,15 @@ import {
     FiChevronRight,
     FiExternalLink,
     FiShoppingCart,
-    FiZap
+    FiZap,
+    FiCheck
 } from "react-icons/fi";
 
 import ProductCard from "../../components/ProductCard";
 import SiteHeader from "../../components/SiteHeader";
 import SiteFooter from "../../components/SiteFooter";
-import api, { getCategoryImageUrl, getVideoUrl, getBannerImageUrl } from "../../lib/api";
+import api, { getCategoryImageUrl, getVideoUrl, getBannerImageUrl, getProductImageUrl } from "../../lib/api";
+import { addToCart, setDirectCheckoutItem } from "../../lib/cartWishlist";
 
 import "./Home.css";
 
@@ -83,6 +85,9 @@ const defaultVideoReels = [
 ];
 
 export default function Home() {
+    const navigate = useNavigate();
+    const [featuredAdded, setFeaturedAdded] = useState(false);
+
     // Dynamic Categories from MongoDB
     const [categories, setCategories] = useState([]);
 
@@ -269,31 +274,50 @@ export default function Home() {
 
     const featuredProduct = products[0] || null;
 
-    const getFeaturedImage = (product) =>
-        product?.image ||
-        product?.imageUrl ||
-        product?.thumbnail ||
-        (Array.isArray(product?.images) ? product.images[0] : null) ||
-        "/assets/product1.jpg";
+    const getFeaturedImage = (product) => {
+        if (!product) return "/assets/product1.jpeg";
+        const raw =
+            product.image ||
+            (Array.isArray(product.images) && product.images.length > 0 ? product.images[0] : null) ||
+            product.imageUrl ||
+            product.thumbnail;
+        return raw ? getProductImageUrl(raw) : "/assets/product1.jpeg";
+    };
 
-    const getFeaturedPrice = (product) =>
-        product?.salePrice ??
-        product?.sellingPrice ??
-        product?.price ??
-        product?.mrp ??
-        499;
+    const getFeaturedPrice = (product) => {
+        if (!product) return 499;
+        return product.price !== undefined && product.price !== null
+            ? Number(product.price)
+            : Number(product.sellingPrice || 499);
+    };
 
-    const getFeaturedOldPrice = (product) =>
-        product?.mrp && Number(product.mrp) > Number(getFeaturedPrice(product))
-            ? product.mrp
-            : null;
+    const getFeaturedOldPrice = (product) => {
+        if (!product) return null;
+        const old = product.oldPrice ?? product.old ?? product.mrp ?? null;
+        const current = getFeaturedPrice(product);
+        return old && Number(old) > Number(current) ? Number(old) : null;
+    };
+
+    const getFeaturedDiscount = (product) => {
+        if (!product) return "";
+        if (product.discount) {
+            return String(product.discount).includes("OFF") ? product.discount : `${product.discount}% OFF`;
+        }
+        const old = getFeaturedOldPrice(product);
+        const curr = getFeaturedPrice(product);
+        if (old && old > curr) {
+            const pct = Math.round(((old - curr) / old) * 100);
+            return pct > 0 ? `${pct}% OFF` : "";
+        }
+        return "";
+    };
 
     const getFeaturedDescription = (product) =>
         product?.shortDescription ||
-        product?.shortDesc ||
         product?.subtitle ||
-        product?.description ||
+        product?.shortDesc ||
         product?.desc ||
+        product?.description ||
         "A carefully crafted Ayurvedic wellness essential made with thoughtfully selected natural ingredients for your everyday self-care ritual.";
 
     const renderCleanDescription = (content) => {
@@ -310,32 +334,26 @@ export default function Home() {
         return <p className="featured-product-description">{content}</p>;
     };
 
-    const handleFeaturedAddToCart = () => {
+    const handleFeaturedAddToCart = (e) => {
+        if (e && e.preventDefault) e.preventDefault();
+        if (e && e.stopPropagation) e.stopPropagation();
         if (!featuredProduct) return;
 
-        try {
-            const existingCart = JSON.parse(localStorage.getItem("vedaCart") || "[]");
-            const productId = featuredProduct._id || featuredProduct.id;
+        addToCart(featuredProduct, 1);
+        setFeaturedAdded(true);
+        setTimeout(() => {
+            setFeaturedAdded(false);
+        }, 1800);
+    };
 
-            const alreadyInCart = existingCart.some(
-                (item) => (item._id || item.id) === productId
-            );
+    const handleFeaturedBuyNow = (e) => {
+        if (e && e.preventDefault) e.preventDefault();
+        if (e && e.stopPropagation) e.stopPropagation();
+        if (!featuredProduct) return;
 
-            if (!alreadyInCart) {
-                localStorage.setItem(
-                    "vedaCart",
-                    JSON.stringify([...existingCart, { ...featuredProduct, quantity: 1 }])
-                );
-            }
-
-            window.dispatchEvent(
-                new CustomEvent("cart:add", {
-                    detail: { product: featuredProduct, quantity: 1 }
-                })
-            );
-        } catch (error) {
-            console.error("Failed to add featured product to cart:", error);
-        }
+        const item = { ...featuredProduct, qty: 1 };
+        setDirectCheckoutItem(item);
+        navigate("/checkout", { state: { directItem: item } });
     };
 
     return (
@@ -472,28 +490,31 @@ export default function Home() {
 
         <div className="category-slider-wrap">
 
-            {/* PREVIOUS */}
+            {/* PREVIOUS (Only shown if more than 6 categories to scroll) */}
+            {categories.length > 6 && (
+                <button
+                    type="button"
+                    className="category-slider-arrow category-prev"
+                    aria-label="Previous categories"
+                    onClick={() => {
+                        const el = document.querySelector(".goal-grid");
+                        if (el) {
+                            const card = el.querySelector(".goal-card");
+                            const shift = card ? card.offsetWidth + 18 : 240;
+                            el.scrollBy({
+                                left: -shift,
+                                behavior: "smooth"
+                            });
+                        }
+                    }}
+                >
+                    <FiChevronLeft />
+                </button>
+            )}
 
-            <button
-                type="button"
-                className="category-slider-arrow category-prev"
-                aria-label="Previous categories"
-                onClick={() => {
-                    document
-                        .querySelector(".goal-grid")
-                        ?.scrollBy({
-                            left: -260,
-                            behavior: "smooth"
-                        });
-                }}
-            >
-                <FiChevronLeft />
-            </button>
 
-
-            {/* CATEGORY LIST */}
-
-            <div className="goal-grid">
+            {/* CATEGORY LIST (Centered if <= 6, horizontally scrollable if > 6) */}
+            <div className={`goal-grid ${categories.length <= 6 ? "is-centered" : "is-scrollable"}`}>
 
                 {categories.map((cat, index) => (
 
@@ -566,23 +587,27 @@ export default function Home() {
             </div>
 
 
-            {/* NEXT */}
-
-            <button
-                type="button"
-                className="category-slider-arrow category-next"
-                aria-label="Next categories"
-                onClick={() => {
-                    document
-                        .querySelector(".goal-grid")
-                        ?.scrollBy({
-                            left: 260,
-                            behavior: "smooth"
-                        });
-                }}
-            >
-                <FiChevronRight />
-            </button>
+            {/* NEXT (Only shown if more than 6 categories to scroll) */}
+            {categories.length > 6 && (
+                <button
+                    type="button"
+                    className="category-slider-arrow category-next"
+                    aria-label="Next categories"
+                    onClick={() => {
+                        const el = document.querySelector(".goal-grid");
+                        if (el) {
+                            const card = el.querySelector(".goal-card");
+                            const shift = card ? card.offsetWidth + 18 : 240;
+                            el.scrollBy({
+                                left: shift,
+                                behavior: "smooth"
+                            });
+                        }
+                    }}
+                >
+                    <FiChevronRight />
+                </button>
+            )}
 
         </div>
 
@@ -646,7 +671,13 @@ export default function Home() {
                     <div className="featured-product-inner container">
 
                         <div className="featured-product-media">
-                            <div className="featured-product-image-card">
+                            <Link
+                                to={`/product/${featuredProduct.slug || featuredProduct._id || featuredProduct.id}`}
+                                state={{ product: featuredProduct }}
+                                className="featured-product-image-card"
+                                style={{ textDecoration: "none" }}
+                                title={featuredProduct?.name}
+                            >
                                 <span className="featured-product-badge">
                                     VEDA BOOTI · FEATURED
                                 </span>
@@ -656,34 +687,38 @@ export default function Home() {
                                     alt={featuredProduct?.name || "Featured Veda Booti product"}
                                     className="featured-product-image"
                                     onError={(e) => {
-                                        if (e.currentTarget.src.endsWith("/assets/product1.jpg")) return;
-                                        e.currentTarget.src = "/assets/product1.jpg";
+                                        if (e.currentTarget.src.endsWith("/assets/product1.jpeg")) return;
+                                        e.currentTarget.src = "/assets/product1.jpeg";
                                     }}
                                 />
-                            </div>
+                            </Link>
 
                             <div className="featured-product-actions">
                                 <button
                                     type="button"
-                                    className="featured-cart-btn"
+                                    className={`featured-cart-btn ${featuredAdded ? "added" : ""}`}
                                     onClick={handleFeaturedAddToCart}
                                     disabled={!featuredProduct}
+                                    style={
+                                        featuredAdded
+                                            ? { background: "#166534", borderColor: "#22c55e", color: "#86efac" }
+                                            : {}
+                                    }
                                 >
-                                    <FiShoppingCart />
-                                    <span>Add to Cart</span>
+                                    {featuredAdded ? <FiCheck /> : <FiShoppingCart />}
+                                    <span>{featuredAdded ? "Added to Cart!" : "Add to Cart"}</span>
                                 </button>
 
-                                <Link
-                                    to={
-                                        featuredProduct
-                                            ? `/product/${featuredProduct._id || featuredProduct.id}`
-                                            : "/shop"
-                                    }
+                                <button
+                                    type="button"
+                                    onClick={handleFeaturedBuyNow}
+                                    disabled={!featuredProduct}
                                     className="featured-buy-btn"
+                                    style={{ border: "none", cursor: "pointer" }}
                                 >
                                     <FiZap />
                                     <span>Buy Now</span>
-                                </Link>
+                                </button>
                             </div>
                         </div>
 
@@ -691,7 +726,13 @@ export default function Home() {
                             <span className="eyebrow">A Little Wellness, Every Day</span>
 
                             <h2>
-                                {featuredProduct?.name || "Natural Ayurvedic Wellness Essential"}
+                                <Link
+                                    to={`/product/${featuredProduct.slug || featuredProduct._id || featuredProduct.id}`}
+                                    state={{ product: featuredProduct }}
+                                    style={{ color: "inherit", textDecoration: "none" }}
+                                >
+                                    {featuredProduct?.name || "Natural Ayurvedic Wellness Essential"}
+                                </Link>
                             </h2>
 
                             {renderCleanDescription(getFeaturedDescription(featuredProduct))}
@@ -703,13 +744,29 @@ export default function Home() {
                                         ₹{Number(getFeaturedOldPrice(featuredProduct)).toLocaleString("en-IN")}
                                     </del>
                                 )}
+                                {getFeaturedDiscount(featuredProduct) && (
+                                    <span className="featured-discount-badge">
+                                        {getFeaturedDiscount(featuredProduct)}
+                                    </span>
+                                )}
                             </div>
 
-                            <div className="featured-product-points">
-                                <span><FiFeather /> Natural Ingredients</span>
-                                <span><FiShield /> Quality Focused</span>
-                                <span><FiHeart /> Everyday Wellness</span>
-                            </div>
+                            {featuredProduct.points && Array.isArray(featuredProduct.points) && featuredProduct.points.filter((pt) => pt && pt.trim()).length > 0 ? (
+                                <div className="featured-product-benefits-grid">
+                                    {featuredProduct.points.filter((pt) => pt && pt.trim()).map((point, index) => (
+                                        <span key={index}>
+                                            <FiShield />
+                                            {point}
+                                        </span>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="featured-product-points">
+                                    <span><FiFeather /> Natural Ingredients</span>
+                                    <span><FiShield /> Quality Focused</span>
+                                    <span><FiHeart /> Everyday Wellness</span>
+                                </div>
+                            )}
 
                             <div className="featured-product-note">
                                 <span className="featured-note-line" />

@@ -444,8 +444,8 @@ export default function AdminProducts() {
     const handleSubmit = async (e) => {
         if (e && e.preventDefault) e.preventDefault();
 
-        // Enforce: only complete Step 4 can submit & save the product to database!
-        if (step !== 4) {
+        // Enforce Step 4 only for brand new product wizard; when editing an existing product, allow updating from ANY step!
+        if (!editingProduct && step !== 4) {
             return;
         }
 
@@ -482,12 +482,9 @@ export default function AdminProducts() {
             formData.append("unit", form.unit || "Gram");
             formData.append("shortDescription", form.shortDescription.trim());
             formData.append("description", form.description.trim());
-            formData.append(
-                "subtitle",
-                form.subtitle
-                    ? form.subtitle.trim()
-                    : form.shortDescription.replace(/<[^>]*>/g, "").trim()
-            );
+            const cleanShortDesc = form.shortDescription ? form.shortDescription.replace(/<[^>]*>/g, "").trim() : "";
+            const finalSubtitle = form.subtitle && form.subtitle.trim() ? form.subtitle.trim() : cleanShortDesc;
+            formData.append("subtitle", finalSubtitle);
             formData.append("tag", form.tag || "Bestseller");
             formData.append("stock", form.stock !== "" && form.stock !== undefined ? form.stock : 100);
             formData.append("weight", form.weight || "");
@@ -498,17 +495,17 @@ export default function AdminProducts() {
 
             // Arrays
             const validBenefits = form.benefits.filter((b) => b && b.trim());
-            validBenefits.forEach((b) => formData.append("benefits", b.trim()));
+            formData.append("benefits", JSON.stringify(validBenefits));
 
             const validIngredients = form.ingredients.filter((i) => i && i.trim());
-            validIngredients.forEach((i) => formData.append("ingredients", i.trim()));
+            formData.append("ingredients", JSON.stringify(validIngredients));
 
             const validFaqs = form.faq.filter((f) => f.question?.trim() || f.answer?.trim());
             formData.append("faq", JSON.stringify(validFaqs));
 
             // Preserved existing images
             const preservedExisting = images.filter((img) => img.existingPath).map((img) => img.existingPath);
-            preservedExisting.forEach((img) => formData.append("existingImages", img));
+            formData.append("existingImages", JSON.stringify(preservedExisting));
 
             // New image files to upload
             images.filter((img) => img.file).forEach((img) => {
@@ -842,12 +839,39 @@ export default function AdminProducts() {
                                 </p>
                             </div>
 
-                            <button
-                                className="modal-close"
-                                onClick={closePopup}
-                            >
-                                <FiX />
-                            </button>
+                            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                                {editingProduct && (
+                                    <button
+                                        type="button"
+                                        className="btn"
+                                        onClick={handleSubmit}
+                                        disabled={submitting}
+                                        style={{
+                                            backgroundColor: "#1b4d3e",
+                                            color: "#fff",
+                                            padding: "8px 16px",
+                                            borderRadius: "8px",
+                                            fontWeight: 600,
+                                            fontSize: "13px",
+                                            display: "inline-flex",
+                                            alignItems: "center",
+                                            gap: "6px",
+                                            cursor: submitting ? "not-allowed" : "pointer",
+                                            opacity: submitting ? 0.7 : 1,
+                                            border: "none",
+                                        }}
+                                    >
+                                        <FiCheck />
+                                        {submitting ? "Updating..." : "Update Product"}
+                                    </button>
+                                )}
+                                <button
+                                    className="modal-close"
+                                    onClick={closePopup}
+                                >
+                                    <FiX />
+                                </button>
+                            </div>
 
                         </div>
 
@@ -864,6 +888,9 @@ export default function AdminProducts() {
                                         ? "product-step active"
                                         : "product-step"
                                 }
+                                onClick={() => setStep(1)}
+                                style={{ cursor: "pointer" }}
+                                title="Step 1: Basic Information"
                             >
                                 <span>1</span>
                                 <div>
@@ -880,6 +907,15 @@ export default function AdminProducts() {
                                         ? "product-step active"
                                         : "product-step"
                                 }
+                                onClick={() => {
+                                    if (editingProduct || (form.productName.trim() && form.category)) {
+                                        setStep(2);
+                                    } else {
+                                        alert("Please enter product name and category first.");
+                                    }
+                                }}
+                                style={{ cursor: "pointer" }}
+                                title="Step 2: Pricing Details"
                             >
                                 <span>2</span>
                                 <div>
@@ -896,6 +932,15 @@ export default function AdminProducts() {
                                         ? "product-step active"
                                         : "product-step"
                                 }
+                                onClick={() => {
+                                    if (editingProduct || (form.productName.trim() && form.category && form.price)) {
+                                        setStep(3);
+                                    } else {
+                                        alert("Please enter basic info and price first.");
+                                    }
+                                }}
+                                style={{ cursor: "pointer" }}
+                                title="Step 3: Content & Images"
                             >
                                 <span>3</span>
                                 <div>
@@ -912,6 +957,15 @@ export default function AdminProducts() {
                                         ? "product-step active"
                                         : "product-step"
                                 }
+                                onClick={() => {
+                                    if (editingProduct || (form.productName.trim() && form.category && form.price)) {
+                                        setStep(4);
+                                    } else {
+                                        alert("Please enter basic info and price first.");
+                                    }
+                                }}
+                                style={{ cursor: "pointer" }}
+                                title="Step 4: SEO Optimization"
                             >
                                 <span>4</span>
                                 <div>
@@ -978,6 +1032,30 @@ export default function AdminProducts() {
                                                 }
                                                 placeholder="Enter product name"
                                                 required
+                                            />
+
+                                        </div>
+
+
+                                        <div className="field full">
+
+                                            <label>
+                                                Product Subtitle / Card Tagline
+                                                <small style={{ color: "#799285", marginLeft: "8px", fontWeight: "normal", fontSize: "11px" }}>
+                                                    (Shown directly below product name on cards)
+                                                </small>
+                                            </label>
+
+                                            <input
+                                                className="input"
+                                                value={form.subtitle}
+                                                onChange={(e) =>
+                                                    updateForm(
+                                                        "subtitle",
+                                                        e.target.value
+                                                    )
+                                                }
+                                                placeholder="e.g. 100% Ayurvedic Herb Oil for Hair Growth"
                                             />
 
                                         </div>
@@ -2028,45 +2106,66 @@ export default function AdminProducts() {
                                 </div>
 
 
-                                {step < 4 ? (
+                                <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                                    {editingProduct && (
+                                        <button
+                                            type="button"
+                                            className="btn save-product-btn"
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                handleSubmit(e);
+                                            }}
+                                            disabled={submitting}
+                                            style={{
+                                                backgroundColor: "#1b4d3e",
+                                                color: "#fff",
+                                                cursor: submitting ? "not-allowed" : "pointer",
+                                                opacity: submitting ? 0.7 : 1,
+                                                display: "inline-flex",
+                                                alignItems: "center",
+                                                gap: "6px",
+                                            }}
+                                        >
+                                            <FiCheck />
+                                            {submitting ? "Updating..." : "Update Product"}
+                                        </button>
+                                    )}
 
-                                    <button
-                                        key="btn-wizard-next"
-                                        type="button"
-                                        className="btn next-btn"
-                                        onClick={(e) => {
-                                            e.preventDefault();
-                                            e.stopPropagation();
-                                            nextStep();
-                                        }}
-                                    >
-                                        Next
-                                        <FiChevronRight />
-                                    </button>
-
-                                ) : (
-
-                                    <button
-                                        key="btn-wizard-save"
-                                        type="button"
-                                        className="btn save-product-btn"
-                                        onClick={(e) => {
-                                            e.preventDefault();
-                                            e.stopPropagation();
-                                            handleSubmit(e);
-                                        }}
-                                        disabled={submitting}
-                                        style={{ opacity: submitting ? 0.7 : 1, cursor: submitting ? "not-allowed" : "pointer" }}
-                                    >
-                                        <FiCheck />
-                                        {submitting
-                                            ? "Saving..."
-                                            : editingProduct
-                                            ? "Update Product"
-                                            : "Save Product"}
-                                    </button>
-
-                                )}
+                                    {step < 4 ? (
+                                        <button
+                                            key="btn-wizard-next"
+                                            type="button"
+                                            className="btn next-btn"
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                nextStep();
+                                            }}
+                                        >
+                                            Next
+                                            <FiChevronRight />
+                                        </button>
+                                    ) : (
+                                        !editingProduct && (
+                                            <button
+                                                key="btn-wizard-save"
+                                                type="button"
+                                                className="btn save-product-btn"
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    e.stopPropagation();
+                                                    handleSubmit(e);
+                                                }}
+                                                disabled={submitting}
+                                                style={{ opacity: submitting ? 0.7 : 1, cursor: submitting ? "not-allowed" : "pointer" }}
+                                            >
+                                                <FiCheck />
+                                                {submitting ? "Saving..." : "Save Product"}
+                                            </button>
+                                        )
+                                    )}
+                                </div>
 
                             </div>
 

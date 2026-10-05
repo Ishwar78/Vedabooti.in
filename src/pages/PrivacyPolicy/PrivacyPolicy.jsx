@@ -766,8 +766,8 @@ export default function PrivacyPolicy() {
                 data-related concerns.
               </p>
 
-              <a href="mailto:support@vedabooti.com">
-                support@vedabooti.com
+              <a href="mailto:vedabooti1@gmail.com">
+                vedabooti1@gmail.com
               </a>
 
             </div>

@@ -194,7 +194,7 @@ export default function Support() {
               <FiMail />
               <div>
                 <small>Direct Email</small>
-                <strong>support@vedabooti.com</strong>
+                <strong>vedabooti1@gmail.com</strong>
               </div>
             </div>
           </div>

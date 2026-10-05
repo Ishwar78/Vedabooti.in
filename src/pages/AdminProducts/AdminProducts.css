@@ -304,6 +304,14 @@
     gap: 9px;
     opacity: 0.42;
     min-width: 130px;
+    cursor: pointer;
+    user-select: none;
+    transition: opacity 0.2s ease, transform 0.15s ease;
+}
+
+.product-step:hover {
+    opacity: 0.85;
+    transform: translateY(-1px);
 }
 
 .product-step.active {

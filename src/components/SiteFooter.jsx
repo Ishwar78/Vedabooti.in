@@ -73,19 +73,15 @@ export default function SiteFooter() {
 
           <h4>Customer Care</h4>
 
-          <Link to="/support">
-            Returns & Refunds
-          </Link>
+         
 
-          <Link to="/support">
-            FAQs
-          </Link>
+      
 
           <Link to="/shipping-policy">
             Shipping Policy
           </Link>
            
-            <Link to="Privacy-Policy">
+            <Link to="/Privacy-Policy">
             Privacy Policy
           </Link>
 

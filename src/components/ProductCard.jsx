@@ -24,8 +24,17 @@ export default function ProductCard({ product }) {
     });
   }, [productId]);
 
+  const productSlugOrId = product.slug || product._id || product.id;
+
+  const discountText =
+    product.discount
+      ? (String(product.discount).includes("OFF") ? product.discount : `${product.discount}% OFF`)
+      : ((product.oldPrice || product.old) && Number(product.oldPrice || product.old) > Number(product.price))
+      ? `${Math.round((1 - Number(product.price) / Number(product.oldPrice || product.old)) * 100)}% OFF`
+      : "";
+
   const handleCardClick = () => {
-    nav(`/product/${product.slug}`, { state: { product } });
+    nav(`/product/${productSlugOrId}`, { state: { product } });
   };
 
   const handleAddToCart = (e) => {
@@ -53,7 +62,7 @@ export default function ProductCard({ product }) {
   return (
     <article className="product-card" onClick={handleCardClick}>
       <div className="pc-media">
-        <span className="badge">{product.discount || product.tag || "Bestseller"}</span>
+        <span className="badge">{discountText || product.tag || "Bestseller"}</span>
         <button
           type="button"
           className={`pc-heart ${wished ? "active" : ""}`}
@@ -91,25 +100,29 @@ export default function ProductCard({ product }) {
 
       <div className="pc-body">
         <Link
-          to={`/product/${product.slug}`}
+          to={`/product/${productSlugOrId}`}
           state={{ product }}
           className="pc-name"
           onClick={(e) => e.stopPropagation()}
         >
           {product.name}
         </Link>
-        <small>{product.subtitle}</small>
+        <small>
+          {(product.subtitle || product.shortDescription || product.category || "")
+            .replace(/<[^>]*>/g, "")
+            .trim()}
+        </small>
 
         <div className="stars">
           ★★★★★ <em>{product.rating}</em>
         </div>
 
         <div className="price-row">
-          <span className="price">₹{product.price}</span>
+          <span className="price">₹{Number(product.price).toLocaleString("en-IN")}</span>
           {(product.oldPrice || product.old) && Number(product.oldPrice || product.old) > Number(product.price) && (
-            <span className="old-price">₹{product.oldPrice || product.old}</span>
+            <span className="old-price">₹{Number(product.oldPrice || product.old).toLocaleString("en-IN")}</span>
           )}
-          {product.discount && (
+          {discountText && (
             <span
               style={{
                 marginLeft: "auto",
@@ -121,7 +134,7 @@ export default function ProductCard({ product }) {
                 fontWeight: 600,
               }}
             >
-              {product.discount}
+              {discountText}
             </span>
           )}
         </div>

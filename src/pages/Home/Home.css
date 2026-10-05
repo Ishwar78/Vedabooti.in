@@ -502,55 +502,57 @@
 
 .goal-grid {
     width: 100%;
-
-    display: grid;
-
-    grid-template-columns:
-        repeat(6, minmax(0, 1fr));
-
+    display: flex;
     gap: 18px;
-
-    overflow: hidden;
-
-    scroll-behavior: smooth;
-
-    padding: 4px 4px 8px;
-
+    align-items: flex-start;
+    padding: 6px 4px 14px;
     box-sizing: border-box;
+    scroll-behavior: smooth;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
 }
 
+.goal-grid::-webkit-scrollbar {
+    display: none;
+}
+
+/* Centered when 6 or fewer categories */
+.goal-grid.is-centered {
+    justify-content: center;
+    overflow-x: auto;
+}
+
+/* Horizontally scrollable when more than 6 categories */
+.goal-grid.is-scrollable {
+    justify-content: flex-start;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+}
 
 /* =========================================================
-   CATEGORY CARD
+   CATEGORY CARD (Exactly 6 visible in 100% width)
 ========================================================= */
 
 .goal-card {
-    min-width: 0;
-
+    /* (100% - (5 gaps * 18px)) / 6 items = exact width so 6 fit in one view */
+    flex: 0 0 calc((100% - (5 * 18px)) / 6);
+    max-width: calc((100% - (5 * 18px)) / 6);
+    min-width: 140px;
+    scroll-snap-align: start;
+    box-sizing: border-box;
     display: flex;
-
     flex-direction: column;
-
     align-items: center;
-
     text-align: center;
-
     text-decoration: none;
-
     color: #fff;
-
     position: relative;
-
     padding: 0 5px 5px;
-
-    transition:
-        transform .35s cubic-bezier(.2,.8,.2,1);
+    transition: transform .35s cubic-bezier(.2,.8,.2,1);
 }
 
-
 .goal-card:hover {
-    transform:
-        translateY(-5px);
+    transform: translateY(-5px);
 }
 
 
@@ -908,43 +910,21 @@
 
 .category-slider-arrow {
     position: absolute;
-
-    top: 50%;
-
-    transform:
-        translateY(-50%);
-
-    width: 42px;
-
-    height: 42px;
-
+    top: 40%;
+    transform: translateY(-50%);
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
-
     border: 1px solid rgba(216,181,106,.65);
-
-    background:
-        rgba(5,20,13,.92);
-
+    background: rgba(5,20,13,.95);
     color: var(--gold2);
-
-    display: none;
-
+    display: flex;
     align-items: center;
-
     justify-content: center;
-
     cursor: pointer;
-
     z-index: 10;
-
-    box-shadow:
-        0 7px 20px rgba(0,0,0,.35);
-
-    transition:
-        background .3s ease,
-        color .3s ease,
-        transform .3s ease,
-        box-shadow .3s ease;
+    box-shadow: 0 7px 20px rgba(0,0,0,.5);
+    transition: background .3s ease, color .3s ease, transform .3s ease, box-shadow .3s ease;
 }
 
 
@@ -1088,14 +1068,14 @@
 
 
     .goal-grid {
-        grid-template-columns:
-            repeat(3, minmax(0, 1fr));
-
-        row-gap: 32px;
-
-        overflow: visible;
+        gap: 14px;
     }
 
+    .goal-card {
+        flex: 0 0 calc((100% - (3 * 14px)) / 4);
+        max-width: calc((100% - (3 * 14px)) / 4);
+        min-width: 130px;
+    }
 
     .goal-image-wrap,
     .goal-image-ring {
@@ -1310,7 +1290,8 @@
 }
 
 .featured-product-image-card {
-    min-height: 410px;
+    min-height: 440px;
+    height: 100%;
     position: relative;
     display: flex;
     align-items: center;
@@ -1318,9 +1299,7 @@
     overflow: hidden;
     border-radius: 24px;
     border: 1px solid rgba(216, 181, 106, 0.35);
-    background:
-        radial-gradient(circle at 50% 42%, rgba(45, 95, 52, 0.28), transparent 58%),
-        linear-gradient(145deg, #0b2418, #06130d);
+    background: #0b2418;
     box-shadow:
         0 22px 55px rgba(0, 0, 0, 0.35),
         inset 0 0 45px rgba(216, 181, 106, 0.035);
@@ -1329,21 +1308,22 @@
 .featured-product-image-card::after {
     content: "";
     position: absolute;
-    inset: 16px;
+    inset: 14px;
     border-radius: 18px;
-    border: 1px solid rgba(216, 181, 106, 0.12);
+    border: 1px solid rgba(216, 181, 106, 0.18);
     pointer-events: none;
+    z-index: 3;
 }
 
 .featured-product-badge {
     position: absolute;
     top: 18px;
     left: 18px;
-    z-index: 3;
+    z-index: 4;
     padding: 7px 12px;
     border-radius: 999px;
     border: 1px solid rgba(216, 181, 106, 0.48);
-    background: rgba(4, 17, 11, 0.78);
+    background: rgba(4, 17, 11, 0.85);
     color: var(--gold2);
     font-size: 9px;
     font-weight: 800;
@@ -1352,18 +1332,20 @@
 }
 
 .featured-product-image {
-    width: 76%;
-    height: 360px;
+    width: 100%;
+    height: 100%;
+    min-height: 440px;
+    max-height: 460px;
     display: block;
-    object-fit: contain;
+    object-fit: cover;
+    object-position: center;
     position: relative;
     z-index: 2;
-    filter: drop-shadow(0 22px 25px rgba(0, 0, 0, 0.35));
     transition: transform 0.5s cubic-bezier(.2,.8,.2,1);
 }
 
 .featured-product-image-card:hover .featured-product-image {
-    transform: scale(1.045) translateY(-4px);
+    transform: scale(1.045);
 }
 
 .featured-product-actions {
@@ -1474,6 +1456,20 @@
 .featured-product-price-row del {
     color: #7f8d85;
     font-size: 15px;
+    text-decoration: line-through;
+}
+
+.featured-discount-badge {
+    background: rgba(34, 197, 94, 0.15);
+    color: #4ade80;
+    border: 1px solid rgba(34, 197, 94, 0.3);
+    padding: 3px 9px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    display: inline-flex;
+    align-items: center;
 }
 
 .featured-product-description {
@@ -1517,6 +1513,46 @@
     color: var(--gold2);
 }
 
+/* Dynamic Benefits Grid matching Product Detail page */
+.featured-product-benefits-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px;
+    margin: 20px 0 18px;
+}
+
+.featured-product-benefits-grid span {
+    border: 1px solid rgba(216, 181, 106, 0.28);
+    border-radius: 9px;
+    padding: 10px 13px;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-size: 13px;
+    color: #e5ece8;
+    background: rgba(8, 27, 19, 0.65);
+    backdrop-filter: blur(8px);
+    transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.featured-product-benefits-grid span:hover {
+    border-color: var(--gold2);
+    transform: translateY(-1px);
+}
+
+.featured-product-benefits-grid svg {
+    color: var(--gold2);
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+@media (max-width: 600px) {
+    .featured-product-benefits-grid {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+}
+
 .featured-product-note {
     display: flex;
     align-items: center;
@@ -1554,7 +1590,9 @@
     }
 
     .featured-product-image {
-        height: 315px;
+        width: 100%;
+        height: 100%;
+        min-height: 360px;
     }
 }
 
@@ -1573,8 +1611,9 @@
     }
 
     .featured-product-image {
-        width: 82%;
-        height: 275px;
+        width: 100%;
+        height: 100%;
+        min-height: 315px;
     }
 
     .featured-product-actions {
@@ -1609,7 +1648,9 @@
     }
 
     .featured-product-image {
-        height: 245px;
+        width: 100%;
+        height: 100%;
+        min-height: 285px;
     }
 
     .featured-product-badge {
@@ -2111,11 +2152,6 @@
             repeat(3, minmax(0, 1fr));
     }
 
-    .goal-grid {
-        grid-template-columns:
-            repeat(3, minmax(0, 1fr));
-    }
-
     .promise-inner {
         grid-template-columns: 1fr;
     }
@@ -2158,7 +2194,6 @@
         align-self: flex-start;
     }
 
-    .goal-grid,
     .grid-5 {
         grid-template-columns:
             repeat(2, minmax(0, 1fr));
@@ -2213,7 +2248,6 @@
         padding-right: 14px;
     }
 
-    .goal-grid,
     .grid-5,
     .grid-3 {
         grid-template-columns: 1fr;

@@ -2,6 +2,11 @@ import express from "express";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 import Order from "../module/Order.js";
+import User from "../module/User.js";
+import {
+  sendOrderConfirmationEmail,
+  sendOrderDeliveredEmail,
+} from "../config/email.js";
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || "vedabooti_user_jwt_secret_token_2026";
@@ -71,6 +76,11 @@ router.post("/", async (req, res) => {
     });
 
     const saved = await newOrder.save();
+
+    // Trigger Order Confirmation Email asynchronously
+    sendOrderConfirmationEmail(saved).catch((mailErr) => {
+      console.error("[Order Mail] Error sending order confirmation email:", mailErr.message);
+    });
 
     return res.status(201).json({
       success: true,
@@ -167,13 +177,39 @@ router.get("/", async (req, res) => {
 const updateOrderStatusHandler = async (req, res) => {
   try {
     const { status } = req.body;
-    const order = await Order.findById(req.params.id);
+    let order = null;
+    if (mongoose.Types.ObjectId.isValid(req.params.id)) {
+      order = await Order.findById(req.params.id);
+    }
+    if (!order) {
+      order = await Order.findOne({ orderId: req.params.id });
+    }
     if (!order) {
       return res.status(404).json({ success: false, message: "Order not found." });
     }
 
+    const previousStatus = order.status;
     if (status) order.status = status;
     await order.save();
+
+    // Trigger Order Delivered Email if status changed to "Delivered"
+    if (status === "Delivered" && previousStatus !== "Delivered") {
+      (async () => {
+        try {
+          if (!order.customer?.email && order.user) {
+            const user = await User.findById(order.user);
+            if (user?.email) {
+              if (!order.customer) order.customer = {};
+              order.customer.email = user.email;
+              if (!order.customer.name && user.name) order.customer.name = user.name;
+            }
+          }
+          await sendOrderDeliveredEmail(order);
+        } catch (mailErr) {
+          console.error("[Order Mail] Error sending order delivered email:", mailErr.message);
+        }
+      })();
+    }
 
     return res.status(200).json({
       success: true,

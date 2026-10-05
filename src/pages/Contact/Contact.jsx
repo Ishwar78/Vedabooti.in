@@ -26,7 +26,7 @@ export default function Contact() {
         titleLine2: "hear from you.",
         description:
             "Reach out to us for product information, order assistance, shipping queries or general support.",
-        email: "support@vedabooti.com",
+        email: "vedabooti1@gmail.com",
         phone: "+91 99999 99999",
         businessName: "Veda Booti Health Care",
         address: "India",
@@ -163,7 +163,7 @@ export default function Contact() {
                             <div className="contact-details">
 
                                 <a
-                                    href={`mailto:${contactDetails.email || "support@vedabooti.com"}`}
+                                    href={`mailto:${contactDetails.email || "vedabooti1@gmail.com"}`}
                                     className="contact-item"
                                 >
 
@@ -177,7 +177,7 @@ export default function Contact() {
                                         </small>
 
                                         <strong>
-                                            {contactDetails.email || "support@vedabooti.com"}
+                                            {contactDetails.email || "vedabooti1@gmail.com"}
                                         </strong>
 
                                         <span>

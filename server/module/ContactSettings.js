@@ -17,7 +17,7 @@ const contactSettingsSchema = new mongoose.Schema(
     },
     email: {
       type: String,
-      default: "support@vedabooti.com",
+      default: "vedabooti1@gmail.com",
     },
     phone: {
       type: String,

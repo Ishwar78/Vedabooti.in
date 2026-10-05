@@ -493,7 +493,7 @@ export default function ShippingPolicy() {
                 </p>
               </div>
 
-              <a href="mailto:support@vedabooti.com">
+              <a href="mailto:vedabooti1@gmail.com">
                 Contact Support
               </a>
 
@@ -553,8 +553,8 @@ export default function ShippingPolicy() {
                 Our support team is available to assist you.
               </p>
 
-              <a href="mailto:support@vedabooti.com">
-                support@vedabooti.com
+              <a href="mailto:vedabooti1@gmail.com">
+                vedabooti1@gmail.com
               </a>
 
             </div>

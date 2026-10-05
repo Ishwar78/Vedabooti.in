@@ -859,8 +859,8 @@ export default function TermsConditions() {
                 questions about these terms.
               </p>
 
-              <a href="mailto:support@vedabooti.com">
-                support@vedabooti.com
+              <a href="mailto:vedabooti1@gmail.com">
+                vedabooti1@gmail.com
               </a>
 
             </div>

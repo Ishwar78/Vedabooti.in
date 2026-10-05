@@ -245,17 +245,19 @@ export default function ProductDetail() {
 
     const averageUserRating = reviewStats.count > 0
         ? reviewStats.averageRating
-        : Number(product.rating || 5.0).toFixed(1);
+        : Number(product?.rating || 5.0).toFixed(1);
 
     useEffect(() => {
+        if (!product) return;
         const prodId = product._id || product.id || product.slug;
         setWished(isInWishlist(prodId));
         return subscribeToStorage(() => {
             setWished(isInWishlist(prodId));
         });
-    }, [product._id, product.id, product.slug]);
+    }, [product?._id, product?.id, product?.slug]);
 
     const handleAddToCart = () => {
+        if (!product) return;
         addToCartHelper(product, qty);
         setAddedToCart(true);
         setTimeout(() => {
@@ -264,6 +266,7 @@ export default function ProductDetail() {
     };
 
     const handleBuyNow = () => {
+        if (!product) return;
         const item = { ...product, qty };
         setDirectCheckoutItem(item);
         navigate("/checkout", { state: { directItem: item } });
@@ -275,9 +278,10 @@ export default function ProductDetail() {
         setWished(res.added);
     };
 
+    const effectiveOldPrice = product?.oldPrice || product?.old || null;
     const discount =
-        product?.old && Number(product.old) > Number(product.price)
-            ? Math.round((1 - product.price / product.old) * 100)
+        effectiveOldPrice && Number(effectiveOldPrice) > Number(product?.price)
+            ? Math.round((1 - Number(product.price) / Number(effectiveOldPrice)) * 100)
             : 0;
 
     if (loading && !product) {

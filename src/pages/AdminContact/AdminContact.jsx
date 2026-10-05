@@ -32,7 +32,7 @@ export default function AdminContact() {
     titleLine2: "hear from you.",
     description:
       "Reach out to us for product information, order assistance, shipping queries or general support.",
-    email: "support@vedabooti.com",
+    email: "vedabooti1@gmail.com",
     phone: "+91 99999 99999",
     businessName: "Veda Booti Health Care",
     address: "India",
@@ -469,7 +469,7 @@ export default function AdminContact() {
                       name="email"
                       value={formData.email || ""}
                       onChange={handleChange}
-                      placeholder="support@vedabooti.com"
+                      placeholder="vedabooti1@gmail.com"
                     />
                   </div>
                 </label>
