@@ -122,6 +122,50 @@ export default function Shop() {
         return products;
     }, [activeProductList, cat, sort, term]);
 
+    const PRODUCTS_PER_PAGE = 10;
+    const [currentPage, setCurrentPage] = useState(1);
+
+    // Reset to page 1 whenever category, search, or sort changes
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [cat, term, sort]);
+
+    const totalPages = Math.ceil(filtered.length / PRODUCTS_PER_PAGE) || 1;
+
+    // Keep currentPage within valid bounds if filtered list shrinks
+    useEffect(() => {
+        if (currentPage > totalPages) {
+            setCurrentPage(totalPages);
+        }
+    }, [totalPages, currentPage]);
+
+    const paginatedProducts = useMemo(() => {
+        const startIndex = (currentPage - 1) * PRODUCTS_PER_PAGE;
+        return filtered.slice(startIndex, startIndex + PRODUCTS_PER_PAGE);
+    }, [filtered, currentPage]);
+
+    const handlePageChange = (newPage) => {
+        if (newPage < 1 || newPage > totalPages || newPage === currentPage) return;
+        setCurrentPage(newPage);
+        const scrollTarget = document.querySelector(".shop-toolbar") || document.querySelector(".shop-main");
+        if (scrollTarget) {
+            scrollTarget.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+    };
+
+    const getPageNumbers = () => {
+        if (totalPages <= 5) {
+            return Array.from({ length: totalPages }, (_, i) => i + 1);
+        }
+        if (currentPage <= 3) {
+            return [1, 2, 3, 4, "...", totalPages];
+        }
+        if (currentPage >= totalPages - 2) {
+            return [1, "...", totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+        }
+        return [1, "...", currentPage - 1, currentPage, currentPage + 1, "...", totalPages];
+    };
+
 
     return (
 
@@ -230,13 +274,16 @@ export default function Shop() {
 
 
                         <span className="product-count">
-
                             Showing{" "}
                             <strong>
-                                {filtered.length}
+                                {filtered.length === 0
+                                    ? 0
+                                    : `${(currentPage - 1) * PRODUCTS_PER_PAGE + 1}–${Math.min(
+                                          currentPage * PRODUCTS_PER_PAGE,
+                                          filtered.length
+                                      )}`}
                             </strong>{" "}
-                            products
-
+                            of <strong>{filtered.length}</strong> products
                         </span>
 
 
@@ -416,9 +463,9 @@ export default function Shop() {
                                 <div className="empty-products" style={{ padding: "60px 20px" }}>
                                     <p>Loading authentic remedies...</p>
                                 </div>
-                            ) : filtered.length > 0 ? (
+                            ) : paginatedProducts.length > 0 ? (
                                 <div className="product-grid">
-                                    {filtered.map(product => (
+                                    {paginatedProducts.map(product => (
                                         <ProductCard
                                             key={product._id || product.id}
                                             product={product}
@@ -455,37 +502,47 @@ export default function Shop() {
                             )}
 
 
-                            <div className="pagination">
+                            {totalPages > 1 && (
+                                <div className="pagination">
+                                    <button
+                                        type="button"
+                                        onClick={() => handlePageChange(currentPage - 1)}
+                                        disabled={currentPage === 1}
+                                        aria-label="Previous Page"
+                                    >
+                                        ‹
+                                    </button>
 
-                                <button>
-                                    ‹
-                                </button>
+                                    {getPageNumbers().map((page, idx) => {
+                                        if (page === "...") {
+                                            return (
+                                                <span key={`ellipsis-${idx}`} className="pagination-ellipsis">
+                                                    …
+                                                </span>
+                                            );
+                                        }
+                                        return (
+                                            <button
+                                                key={`page-${page}`}
+                                                type="button"
+                                                className={currentPage === page ? "active" : ""}
+                                                onClick={() => handlePageChange(page)}
+                                            >
+                                                {page}
+                                            </button>
+                                        );
+                                    })}
 
-                                <button className="active">
-                                    1
-                                </button>
-
-                                <button>
-                                    2
-                                </button>
-
-                                <button>
-                                    3
-                                </button>
-
-                                <button>
-                                    4
-                                </button>
-
-                                <button>
-                                    …
-                                </button>
-
-                                <button>
-                                    ›
-                                </button>
-
-                            </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => handlePageChange(currentPage + 1)}
+                                        disabled={currentPage === totalPages}
+                                        aria-label="Next Page"
+                                    >
+                                        ›
+                                    </button>
+                                </div>
+                            )}
 
                         </div>
 

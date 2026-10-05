@@ -686,7 +686,7 @@
 }
 
 
-.pagination button:hover {
+.pagination button:hover:not(:disabled) {
     background: #13291e;
 
     border-color: var(--gold);
@@ -694,6 +694,23 @@
     transform: translateY(-1px);
 }
 
+.pagination button:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    transform: none;
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+.pagination .pagination-ellipsis {
+    color: #718078;
+    padding: 0 4px;
+    font-size: 13px;
+    user-select: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 32px;
+}
 
 .pagination button.active {
     background:
