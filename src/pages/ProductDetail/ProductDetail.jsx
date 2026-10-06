@@ -26,6 +26,7 @@ import {
     setDirectCheckoutItem,
     subscribeToStorage
 } from "../../lib/cartWishlist";
+import { openAuthModal } from "../../lib/authModal";
 
 import "./ProductDetail.css";
 
@@ -269,7 +270,12 @@ export default function ProductDetail() {
         if (!product) return;
         const item = { ...product, qty };
         setDirectCheckoutItem(item);
-        navigate("/checkout", { state: { directItem: item } });
+        const token = localStorage.getItem("token") || localStorage.getItem("userToken");
+        if (token) {
+            navigate("/checkout", { state: { directItem: item } });
+        } else {
+            openAuthModal({ directItem: item, redirectTo: "/checkout" });
+        }
     };
 
     const handleWishlistToggle = () => {

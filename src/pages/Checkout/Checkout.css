@@ -453,3 +453,167 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ================= SAVED ADDRESSES SECTION ================= */
+
+.saved-addresses-section {
+  margin-bottom: 22px;
+}
+
+.saved-addresses-header {
+  font-size: 13px;
+  color: #9bb2a5;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.saved-addresses-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+.saved-address-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: #061910;
+  border: 1px solid rgba(216, 181, 106, 0.22);
+  border-radius: 12px;
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.saved-address-card:hover {
+  border-color: rgba(216, 181, 106, 0.5);
+  background: #092116;
+}
+
+.saved-address-card.selected {
+  border-color: #e5c57b;
+  background: rgba(229, 197, 123, 0.08);
+  box-shadow: 0 0 0 1px #e5c57b;
+}
+
+.addr-radio-wrapper {
+  margin-top: 3px;
+}
+
+.addr-radio-wrapper input[type="radio"] {
+  accent-color: #e5c57b;
+  width: 17px;
+  height: 17px;
+  cursor: pointer;
+}
+
+.addr-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.addr-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.addr-name {
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.addr-tag {
+  background: rgba(255, 255, 255, 0.08);
+  color: #a7beaf;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.addr-badge {
+  background: rgba(34, 197, 94, 0.15);
+  color: #4ade80;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.addr-text {
+  color: #c4d4cc;
+  font-size: 13px;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.addr-phone {
+  color: #8fa699;
+  font-size: 12px;
+}
+
+.add-new-card {
+  border-style: dashed;
+  background: transparent;
+}
+
+.add-new-card:hover {
+  background: rgba(216, 181, 106, 0.05);
+}
+
+.selected-address-summary {
+  background: #04120b;
+  border: 1px solid #1c4731;
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 20px;
+}
+
+.selected-address-badge {
+  color: #4ade80;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.selected-address-badge strong {
+  color: #ffffff;
+}
+
+.selected-address-summary p {
+  color: #9bb2a5;
+  font-size: 13px;
+  margin: 0 0 10px;
+  line-height: 1.4;
+}
+
+.edit-addr-btn {
+  background: none;
+  border: none;
+  color: #e5c57b;
+  font-size: 12.5px;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+  font-weight: 600;
+}
+
+.edit-addr-btn:hover {
+  color: #fff;
+}
+
+.new-address-notice {
+  font-size: 12.5px;
+  color: #e5c57b;
+  margin-bottom: 12px;
+  font-weight: 600;
+}

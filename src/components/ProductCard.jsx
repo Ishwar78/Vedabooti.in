@@ -9,6 +9,7 @@ import {
   subscribeToStorage
 } from "../lib/cartWishlist";
 import { getProductImageUrl } from "../lib/api";
+import { openAuthModal } from "../lib/authModal";
 import "./ProductCard.css";
 
 export default function ProductCard({ product }) {
@@ -50,7 +51,12 @@ export default function ProductCard({ product }) {
     e.stopPropagation();
     const item = { ...product, qty: 1 };
     setDirectCheckoutItem(item);
-    nav("/checkout", { state: { directItem: item } });
+    const token = localStorage.getItem("token") || localStorage.getItem("userToken");
+    if (token) {
+      nav("/checkout", { state: { directItem: item } });
+    } else {
+      openAuthModal({ directItem: item, redirectTo: "/checkout" });
+    }
   };
 
   const handleWishlist = (e) => {

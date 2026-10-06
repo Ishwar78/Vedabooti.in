@@ -61,8 +61,8 @@ export default function SiteHeader() {
           </Link>
           <nav className="main-nav desktop-nav">
             <Link to="/">Home</Link>
-            <Link to="/shop">Shop</Link>
-            <Link to="/categories">Categories</Link>
+            {/* <Link to="/shop">Shop</Link>
+            <Link to="/categories">Categories</Link> */}
             <Link to="/about">About Us</Link>
             <Link to="/contact">Contact</Link>
           </nav>

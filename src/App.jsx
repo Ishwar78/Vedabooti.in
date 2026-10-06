@@ -2,6 +2,7 @@ import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 
 import ScrollToTop from "./components/ScrollToTop";
+import AuthModal from "./components/AuthModal/AuthModal";
 
 // ================================
 // PUBLIC PAGES
@@ -64,6 +65,9 @@ export default function App() {
         <>
             {/* Scroll To Top Button */}
             <ScrollToTop />
+
+            {/* Global Quick Auth Modal */}
+            <AuthModal />
 
             <Routes>
 

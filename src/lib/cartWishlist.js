@@ -201,14 +201,20 @@ export function clearCart() {
 
 export function setDirectCheckoutItem(item) {
   if (typeof window !== "undefined") {
-    sessionStorage.setItem("vb_direct_checkout", JSON.stringify(item));
+    try {
+      const data = JSON.stringify(item);
+      sessionStorage.setItem("vb_direct_checkout", data);
+      localStorage.setItem("vb_direct_checkout", data);
+    } catch (e) {
+      console.warn("Storage error saving direct checkout item:", e);
+    }
   }
 }
 
 export function getDirectCheckoutItem() {
   if (typeof window === "undefined") return null;
   try {
-    const raw = sessionStorage.getItem("vb_direct_checkout");
+    const raw = sessionStorage.getItem("vb_direct_checkout") || localStorage.getItem("vb_direct_checkout");
     return raw ? JSON.parse(raw) : null;
   } catch {
     return null;
@@ -218,6 +224,7 @@ export function getDirectCheckoutItem() {
 export function clearDirectCheckoutItem() {
   if (typeof window !== "undefined") {
     sessionStorage.removeItem("vb_direct_checkout");
+    localStorage.removeItem("vb_direct_checkout");
   }
 }
 

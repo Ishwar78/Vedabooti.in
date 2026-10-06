@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { FiLock, FiCheckCircle, FiTag, FiX, FiShield, FiTruck } from "react-icons/fi";
+import { FiLock, FiCheckCircle, FiTag, FiX, FiShield, FiTruck, FiMapPin, FiUserCheck, FiPlusCircle } from "react-icons/fi";
 import SiteHeader from "../../components/SiteHeader";
 import SiteFooter from "../../components/SiteFooter";
 import api from "../../lib/api";
+import { openAuthModal } from "../../lib/authModal";
 import {
   getCart,
   clearCart,
@@ -31,15 +32,20 @@ export default function Checkout() {
   const nav = useNavigate();
   const location = useLocation();
 
-  const token =
-    typeof window !== "undefined"
+  const [token, setToken] = useState(() => {
+    return typeof window !== "undefined"
       ? localStorage.getItem("token") || localStorage.getItem("userToken")
       : null;
+  });
   const isLoggedIn = !!token;
 
   const [checkoutItems, setCheckoutItems] = useState([]);
   const [isDirect, setIsDirect] = useState(false);
   const [placingOrder, setPlacingOrder] = useState(false);
+
+  // Saved Addresses State
+  const [savedAddresses, setSavedAddresses] = useState([]);
+  const [selectedAddressId, setSelectedAddressId] = useState("new");
 
   // Form State
   const [formData, setFormData] = useState({
@@ -59,6 +65,25 @@ export default function Checkout() {
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [couponError, setCouponError] = useState("");
   const [couponSuccess, setCouponSuccess] = useState("");
+
+  // Listen to storage event (e.g. when user signs up or logs in via AuthModal)
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const currentToken =
+        localStorage.getItem("token") || localStorage.getItem("userToken");
+      setToken(currentToken);
+    };
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, []);
+
+  // If guest arrives at checkout, automatically open AuthModal
+  useEffect(() => {
+    if (!token) {
+      const directItem = location.state?.directItem || getDirectCheckoutItem();
+      openAuthModal({ directItem, redirectTo: "/checkout" });
+    }
+  }, [token]);
 
   useEffect(() => {
     // 1. Check passed directItem from location state
@@ -91,43 +116,77 @@ export default function Checkout() {
       }
     };
     fetchCoupons();
+  }, []);
 
-    const fetchUserProfile = async () => {
-      try {
-        const token = localStorage.getItem("token") || localStorage.getItem("userToken");
-        if (!token) return;
+  const fetchUserProfile = async () => {
+    try {
+      const currentToken = localStorage.getItem("token") || localStorage.getItem("userToken");
+      if (!currentToken) return;
 
-        const res = await api.get("/api/auth/me");
-        if (res?.success && res.user) {
+      const res = await api.get("/api/auth/me");
+      if (res?.success && res.user) {
+        setFormData((prev) => ({
+          ...prev,
+          name: prev.name || res.user.name || "",
+          email: prev.email || res.user.email || "",
+          phone: prev.phone || res.user.phone || "",
+        }));
+      }
+
+      const addrRes = await api.get("/api/auth/addresses");
+      if (addrRes?.success && Array.isArray(addrRes.addresses) && addrRes.addresses.length > 0) {
+        setSavedAddresses(addrRes.addresses);
+        const defaultAddr = addrRes.addresses.find((a) => a.isDefault) || addrRes.addresses[0];
+        if (defaultAddr) {
+          setSelectedAddressId(defaultAddr._id);
           setFormData((prev) => ({
             ...prev,
-            name: prev.name || res.user.name || "",
-            email: prev.email || res.user.email || "",
-            phone: prev.phone || res.user.phone || "",
+            name: defaultAddr.fullName || prev.name || addrRes.user?.name || "",
+            phone: defaultAddr.phone || prev.phone || addrRes.user?.phone || "",
+            address: defaultAddr.addressLine1 || defaultAddr.address || "",
+            city: defaultAddr.city || "",
+            state: defaultAddr.state || "",
+            pincode: defaultAddr.pincode || "",
           }));
         }
-
-        const addrRes = await api.get("/api/auth/addresses");
-        if (addrRes?.success && Array.isArray(addrRes.addresses) && addrRes.addresses.length > 0) {
-          const defaultAddr = addrRes.addresses.find((a) => a.isDefault) || addrRes.addresses[0];
-          if (defaultAddr) {
-            setFormData((prev) => ({
-              ...prev,
-              name: prev.name || defaultAddr.fullName || "",
-              phone: prev.phone || defaultAddr.phone || "",
-              address: prev.address || defaultAddr.street || "",
-              city: prev.city || defaultAddr.city || "",
-              state: prev.state || defaultAddr.state || "",
-              pincode: prev.pincode || defaultAddr.pincode || "",
-            }));
-          }
-        }
-      } catch (err) {
-        // silent
+      } else {
+        setSavedAddresses([]);
+        setSelectedAddressId("new");
       }
-    };
-    fetchUserProfile();
-  }, []);
+    } catch (err) {
+      console.warn("Could not fetch addresses:", err.message);
+    }
+  };
+
+  useEffect(() => {
+    if (token) {
+      fetchUserProfile();
+    }
+  }, [token]);
+
+  const handleSelectSavedAddress = (addr) => {
+    setSelectedAddressId(addr._id);
+    setFormData((prev) => ({
+      ...prev,
+      name: addr.fullName || prev.name,
+      phone: addr.phone || prev.phone,
+      address: addr.addressLine1 || addr.address || "",
+      city: addr.city || "",
+      state: addr.state || "",
+      pincode: addr.pincode || "",
+    }));
+  };
+
+  const handleAddNewAddress = () => {
+    setSelectedAddressId("new");
+    setFormData((prev) => ({
+      ...prev,
+      address: "",
+      city: "",
+      state: "",
+      pincode: "",
+    }));
+  };
 
   const subtotal = checkoutItems.reduce(
     (sum, item) => sum + (Number(item.price) || 0) * (item.qty || 1),
@@ -221,8 +280,10 @@ export default function Checkout() {
     e.preventDefault();
 
     if (!isLoggedIn) {
-      alert("Please log in or sign up to your account to place an order.");
-      nav("/login", { state: { from: "/checkout", redirectTo: "/checkout" } });
+      openAuthModal({
+        directItem: isDirect ? checkoutItems[0] : null,
+        redirectTo: "/checkout",
+      });
       return;
     }
 
@@ -417,23 +478,28 @@ export default function Checkout() {
             {/* Delivery & Payment Form */}
             <form className="checkout-form" onSubmit={handlePlaceOrder}>
               {!isLoggedIn && (
-                <div className="checkout-login-alert">
+                <div
+                  className="checkout-login-alert"
+                  style={{ cursor: "pointer" }}
+                  onClick={() =>
+                    openAuthModal({
+                      directItem: isDirect ? checkoutItems[0] : null,
+                      redirectTo: "/checkout",
+                    })
+                  }
+                >
                   <FiLock />
                   <div>
-                    <strong>Login Required: </strong>
+                    <strong>Sign In or Create Account: </strong>
                     <span>
-                      Please{" "}
-                      <Link to="/login" state={{ from: "/checkout", redirectTo: "/checkout" }}>
-                        Log In / Sign Up
-                      </Link>{" "}
-                      with your email to complete your order.
+                      Click here to <strong>Log In / Sign Up</strong> in seconds and access saved addresses.
                     </span>
                   </div>
                 </div>
               )}
 
-              <h2>Contact & Delivery Address</h2>
-              <div className="form-grid">
+              <h2>1. Contact Information</h2>
+              <div className="form-grid" style={{ marginBottom: "24px" }}>
                 <input
                   className="input"
                   name="name"
@@ -452,46 +518,136 @@ export default function Checkout() {
                   required
                 />
                 <input
-                  className="input"
+                  className="input wide"
                   name="phone"
                   value={formData.phone}
                   onChange={handleInputChange}
                   placeholder="10-digit Mobile Number *"
                   required
                 />
-                <input
-                  className="input"
-                  name="pincode"
-                  value={formData.pincode}
-                  onChange={handleInputChange}
-                  placeholder="Pincode *"
-                  required
-                />
-                <input
-                  className="input wide"
-                  name="address"
-                  value={formData.address}
-                  onChange={handleInputChange}
-                  placeholder="Flat, House no., Building, Street Address *"
-                  required
-                />
-                <input
-                  className="input"
-                  name="city"
-                  value={formData.city}
-                  onChange={handleInputChange}
-                  placeholder="City / District *"
-                  required
-                />
-                <input
-                  className="input"
-                  name="state"
-                  value={formData.state}
-                  onChange={handleInputChange}
-                  placeholder="State *"
-                  required
-                />
               </div>
+
+              <h2>2. Delivery Address</h2>
+
+              {/* SAVED ADDRESSES SELECTOR */}
+              {savedAddresses.length > 0 && (
+                <div className="saved-addresses-section">
+                  <div className="saved-addresses-header">
+                    <span>Choose from your saved addresses or add a new one:</span>
+                  </div>
+                  <div className="saved-addresses-list">
+                    {savedAddresses.map((addr) => {
+                      const isSelected = selectedAddressId === addr._id;
+                      const fullAddrStr = [
+                        addr.addressLine1 || addr.address,
+                        addr.city,
+                        addr.state,
+                        addr.pincode,
+                      ]
+                        .filter(Boolean)
+                        .join(", ");
+
+                      return (
+                        <div
+                          key={addr._id}
+                          className={`saved-address-card ${isSelected ? "selected" : ""}`}
+                          onClick={() => handleSelectSavedAddress(addr)}
+                        >
+                          <div className="addr-radio-wrapper">
+                            <input
+                              type="radio"
+                              name="selectedDeliveryAddress"
+                              checked={isSelected}
+                              onChange={() => handleSelectSavedAddress(addr)}
+                            />
+                          </div>
+                          <div className="addr-content">
+                            <div className="addr-top">
+                              <strong className="addr-name">
+                                {addr.fullName || formData.name || "Customer"}
+                              </strong>
+                              <span className="addr-tag">{addr.type || "Home"}</span>
+                              {addr.isDefault && <span className="addr-badge">Default</span>}
+                            </div>
+                            <p className="addr-text">{fullAddrStr}</p>
+                            {addr.phone && (
+                              <small className="addr-phone">📞 {addr.phone}</small>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+
+                    {/* Add New Address Option Card */}
+                    <div
+                      className={`saved-address-card add-new-card ${
+                        selectedAddressId === "new" ? "selected" : ""
+                      }`}
+                      onClick={handleAddNewAddress}
+                    >
+                      <div className="addr-radio-wrapper">
+                        <input
+                          type="radio"
+                          name="selectedDeliveryAddress"
+                          checked={selectedAddressId === "new"}
+                          onChange={handleAddNewAddress}
+                        />
+                      </div>
+                      <div className="addr-content">
+                        <strong className="addr-name">+ Deliver to a New Address</strong>
+                        <p className="addr-text">
+                          Enter a different delivery address for this order
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* NEW ADDRESS INPUT FIELDS */}
+              {(savedAddresses.length === 0 || selectedAddressId === "new") && (
+                <div className="new-address-form">
+                  {savedAddresses.length > 0 && (
+                    <div className="new-address-notice">
+                      <span>✦ Enter New Delivery Address Details:</span>
+                    </div>
+                  )}
+                  <div className="form-grid">
+                    <input
+                      className="input wide"
+                      name="address"
+                      value={formData.address}
+                      onChange={handleInputChange}
+                      placeholder="Flat, House no., Building, Street Address *"
+                      required
+                    />
+                    <input
+                      className="input"
+                      name="city"
+                      value={formData.city}
+                      onChange={handleInputChange}
+                      placeholder="City / District *"
+                      required
+                    />
+                    <input
+                      className="input"
+                      name="state"
+                      value={formData.state}
+                      onChange={handleInputChange}
+                      placeholder="State *"
+                      required
+                    />
+                    <input
+                      className="input wide"
+                      name="pincode"
+                      value={formData.pincode}
+                      onChange={handleInputChange}
+                      placeholder="6-digit Pincode *"
+                      required
+                    />
+                  </div>
+                </div>
+              )}
 
               <h2>Payment Method</h2>
               <div className="payment-options">

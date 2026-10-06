@@ -9,7 +9,7 @@ import {
   FiEdit2,
 } from "react-icons/fi";
 import api from "../../lib/api";
-import { mergeAndRestoreUserCart } from "../../lib/cartWishlist";
+import { mergeAndRestoreUserCart, getDirectCheckoutItem } from "../../lib/cartWishlist";
 import "./Login.css";
 
 export default function Login() {
@@ -128,9 +128,10 @@ export default function Login() {
       // Notify other components via storage event
       window.dispatchEvent(new Event("storage"));
 
-      setSuccess("Login successful! Redirecting to your account...");
+      setSuccess("Login successful! Redirecting...");
       setTimeout(() => {
-        navigate(redirectTo);
+        const directItem = location.state?.directItem || getDirectCheckoutItem();
+        navigate(redirectTo, { state: { directItem } });
       }, 1000);
     } catch (err) {
       setError(err.message || "Invalid OTP code. Please try again.");

@@ -12,7 +12,7 @@ import {
   FiEdit2,
 } from "react-icons/fi";
 import api from "../../lib/api";
-import { mergeAndRestoreUserCart } from "../../lib/cartWishlist";
+import { mergeAndRestoreUserCart, getDirectCheckoutItem } from "../../lib/cartWishlist";
 import "../Login/Login.css";
 
 export default function SignUp() {
@@ -145,8 +145,9 @@ export default function SignUp() {
 
       setSuccess("Account verified successfully! Redirecting...");
       setTimeout(() => {
-        navigate(redirectTo);
-      }, 1200);
+        const directItem = location.state?.directItem || getDirectCheckoutItem();
+        navigate(redirectTo, { state: { directItem } });
+      }, 1000);
     } catch (err) {
       setError(err.message || "Verification failed. Please try again.");
     } finally {

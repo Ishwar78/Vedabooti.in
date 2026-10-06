@@ -77,6 +77,43 @@ router.post("/", async (req, res) => {
 
     const saved = await newOrder.save();
 
+    // Auto-save address to user profile for future orders if not already saved
+    if (authUser?.id && customer?.address && customer?.pincode) {
+      try {
+        const userDoc = await User.findById(authUser.id);
+        if (userDoc) {
+          if (!userDoc.phone && customer.phone) {
+            userDoc.phone = customer.phone.trim();
+          }
+          if (!Array.isArray(userDoc.addresses)) {
+            userDoc.addresses = [];
+          }
+          const cleanAddr = customer.address.trim().toLowerCase();
+          const cleanPin = customer.pincode.trim();
+          const alreadyExists = userDoc.addresses.some(
+            (a) =>
+              (a.addressLine1 || a.address || "").trim().toLowerCase() === cleanAddr &&
+              (a.pincode || "").trim() === cleanPin
+          );
+          if (!alreadyExists) {
+            userDoc.addresses.push({
+              fullName: customer.name || userDoc.name || "Customer",
+              phone: customer.phone || userDoc.phone || "",
+              addressLine1: customer.address.trim(),
+              city: (customer.city || "").trim(),
+              state: (customer.state || "").trim(),
+              pincode: cleanPin,
+              type: "Home",
+              isDefault: userDoc.addresses.length === 0,
+            });
+            await userDoc.save();
+          }
+        }
+      } catch (addrErr) {
+        console.warn("[Order API] Could not auto-save address to user:", addrErr.message);
+      }
+    }
+
     // Trigger Order Confirmation Email asynchronously
     sendOrderConfirmationEmail(saved).catch((mailErr) => {
       console.error("[Order Mail] Error sending order confirmation email:", mailErr.message);

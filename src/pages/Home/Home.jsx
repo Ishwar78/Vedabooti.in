@@ -22,6 +22,7 @@ import SiteHeader from "../../components/SiteHeader";
 import SiteFooter from "../../components/SiteFooter";
 import api, { getCategoryImageUrl, getVideoUrl, getBannerImageUrl, getProductImageUrl } from "../../lib/api";
 import { addToCart, setDirectCheckoutItem } from "../../lib/cartWishlist";
+import { openAuthModal } from "../../lib/authModal";
 
 import "./Home.css";
 
@@ -353,7 +354,12 @@ export default function Home() {
 
         const item = { ...featuredProduct, qty: 1 };
         setDirectCheckoutItem(item);
-        navigate("/checkout", { state: { directItem: item } });
+        const token = localStorage.getItem("token") || localStorage.getItem("userToken");
+        if (token) {
+            navigate("/checkout", { state: { directItem: item } });
+        } else {
+            openAuthModal({ directItem: item, redirectTo: "/checkout" });
+        }
     };
 
     return (
@@ -449,13 +455,13 @@ export default function Home() {
                     )}
                 </section>
 
-                {/* ================= CATEGORIES ================= */}
+                
               {/* ================= CATEGORIES ================= */}
-<section className="home-categories">
+{/* <section className="home-categories">
 
     <div className="category-inner">
 
-        {/* ================= HEADER ================= */}
+      
 
         <div className="category-section-head">
 
@@ -486,11 +492,11 @@ export default function Home() {
         </div>
 
 
-        {/* ================= CATEGORY ROW ================= */}
+      
 
         <div className="category-slider-wrap">
 
-            {/* PREVIOUS (Only shown if more than 6 categories to scroll) */}
+            
             {categories.length > 6 && (
                 <button
                     type="button"
@@ -513,7 +519,7 @@ export default function Home() {
             )}
 
 
-            {/* CATEGORY LIST (Centered if <= 6, horizontally scrollable if > 6) */}
+            
             <div className={`goal-grid ${categories.length <= 6 ? "is-centered" : "is-scrollable"}`}>
 
                 {categories.map((cat, index) => (
@@ -524,7 +530,7 @@ export default function Home() {
                         key={cat._id || cat.name}
                     >
 
-                        {/* IMAGE */}
+                        
 
                         <div className="goal-image-wrap">
 
@@ -542,7 +548,7 @@ export default function Home() {
                             </div>
 
 
-                            {/* SMALL FLOATING ICON */}
+                            
 
                             <span className="goal-floating-icon">
 
@@ -558,7 +564,7 @@ export default function Home() {
                         </div>
 
 
-                        {/* TEXT */}
+                    
 
                         <div className="goal-content">
 
@@ -587,7 +593,7 @@ export default function Home() {
             </div>
 
 
-            {/* NEXT (Only shown if more than 6 categories to scroll) */}
+            
             {categories.length > 6 && (
                 <button
                     type="button"
@@ -613,11 +619,11 @@ export default function Home() {
 
     </div>
 
-</section>
+</section> */}
 
 
                 {/* ================= PRODUCTS ================= */}
-                <section className="home-products container">
+                {/* <section className="home-products container">
 
                     <div className="section-head">
 
@@ -663,7 +669,7 @@ export default function Home() {
                             <p>Authentic products added by the Admin will appear here.</p>
                         </div>
                     )}
-                </section>
+                </section> */}
 
                 {/* ================= FEATURED PRODUCT ================= */}
                 {featuredProduct && (

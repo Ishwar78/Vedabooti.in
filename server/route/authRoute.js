@@ -189,6 +189,80 @@ router.post("/verify-signup-otp", async (req, res) => {
 });
 
 /* =========================================================
+   2B. DIRECT / QUICK SIGN-UP (Immediate Account Creation for Checkout)
+========================================================= */
+router.post("/quick-signup", async (req, res) => {
+  try {
+    const { name, email, phone } = req.body;
+
+    if (!email || !isValidEmail(email)) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide a valid email address.",
+      });
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanName = (name || "").trim() || "Customer";
+    const cleanPhone = (phone || "").trim();
+
+    // Check if user is already registered
+    const existingUser = await User.findOne({ email: cleanEmail });
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        alreadyRegistered: true,
+        message: "This email is already registered. Please login to your account.",
+      });
+    }
+
+    // Create user immediately
+    const newUser = new User({
+      name: cleanName,
+      email: cleanEmail,
+      phone: cleanPhone,
+      isVerified: true,
+      role: "user",
+      status: "Active",
+    });
+
+    const savedUser = await newUser.save();
+
+    // Clean up any pending OTPs for this email
+    await Otp.deleteMany({ email: cleanEmail });
+
+    // Generate 30-day JWT session token
+    const token = jwt.sign(
+      { id: savedUser._id, email: savedUser.email, role: savedUser.role },
+      JWT_SECRET,
+      { expiresIn: "30d" }
+    );
+
+    return res.status(201).json({
+      success: true,
+      message: "Account created successfully! Welcome to Veda Booti.",
+      token,
+      user: {
+        id: savedUser._id,
+        name: savedUser.name,
+        email: savedUser.email,
+        phone: savedUser.phone,
+        role: savedUser.role,
+        createdAt: savedUser.createdAt,
+      },
+      cart: savedUser.cart || [],
+    });
+  } catch (error) {
+    console.error("[Quick Signup Error]:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to create account. Please try again.",
+      error: error.message,
+    });
+  }
+});
+
+/* =========================================================
    3. SEND LOGIN OTP (To registered email only)
 ========================================================= */
 router.post("/send-login-otp", async (req, res) => {
@@ -425,11 +499,19 @@ router.put("/cart", verifyUserToken, async (req, res) => {
 ========================================================= */
 router.get("/addresses", verifyUserToken, async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select("addresses");
+    const user = await User.findById(req.user.id).select("addresses name email phone");
     if (!user) {
       return res.status(404).json({ success: false, message: "User not found." });
     }
-    return res.status(200).json({ success: true, addresses: user.addresses || [] });
+    return res.status(200).json({
+      success: true,
+      addresses: user.addresses || [],
+      user: {
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+      },
+    });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }
